@@ -1,0 +1,61 @@
+TODO/high-priority:
+* nonlinear dynamics (need more tests)
+* Simulator/run: linearize plant around a trajectory
+
+TODO/middle-priority:
+* Simulator: support multiple planners
+* allow to change the prediction horizon directly from Planner
+* rename 'parameter' to 'preview'
+* setters in Planner.Parameters must check for correct dimensions
+* nD Obstacles (partially done in Obstacle/constraints, need more tests)
+* soft constraints
+* support rotation of agents/obstacles
+* non-rectangular obstacles
+* sort output in AbstractAgent/listParameters by signal index
+* improve formulation performance
+
+TODO/low-priority:
+* Simulator/run: progress bar
+* Simulator: support 3D cases
+* ParameterSetter class
+* AgentiSignal/filter_value must mark min,max,reference,penalty as incompatiblewith
+* Agent: enable the display() method
+* Obstacle: enable the display() method
+* AgentSignal: enable the display() method
+* use doubles instead of 'constant' in DemoAgent2D
+* Agent: remove optimize() and getOptimizer() methods (adjust tests accordingly)
+* refactor AgentFactory as a class with static methods
+* ObstacleFactory
+* automatic instantiation in AgentSignal 
+(then value_or_var will not be needed, always return .Var, create sdpvars
+in the "set" callback)
+* named signals/signal groups
+* Simulator interface to Gazebo 
+(http://www.mathworks.com/help/robotics/examples/getting-started-with-gazebo-and-a-simulated-turtlebot.html)
+* improve code performance
+
+DONE:
+* treat linear dynamics as a filter applied on AbstractAgent
+* AgentFactory
+* add copyright/license
+* Obstacles.Size and Agent.Size must be w.r.t. width/height
+* multiple obstacles
+* AgentSignal: rename the "all" method to "each"
+* Agent: drop the "Dynamics" and "Geometry" groups, flatten out the structure
+* introduce the LinearAgent class (drop Agent/filter_linearDynamics)
+* Obstacle class
+* separate Obstacles from Agent to Planner
+* ymin/ymax constraints must assume Geometry.Size
+* each object gets the UserData property (those derived from OMPBaseClass)
+* Agent/listParameters must work even without instantiation
+* move t_Agent/test3(), test5(), test6(), test7() to t_Planner
+* Obstacle(agent, n) will create "n" obstacles at once
+* Simulator class
+* Simulator/play: support Trail
+* Simulator/run: support obstacles
+* Simulator/plot: support obstacles
+* Simulator.circularTrajectory
+* Simulator.pointwiseTrajectory
+* Planner: minimal separation gap
+* Simulator/run: support radar (must handle Obstacle.Visible)
+* Simulator/plot: support radar (must handle Obstacle.Visible)
