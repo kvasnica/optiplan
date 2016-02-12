@@ -13,7 +13,7 @@ yalmip clear
 close all
 
 %% set up the playground
-N = 50;     % prediction horizon
+N = 10;     % prediction horizon
 Ts = 0.25;  % sampling time
 agent = optiplan.LinearAgent.demo2D('PredictionHorizon', N, 'SamplingTime', Ts);
 agent.Size.Value = [1; 1]; % agents width (in the x-axis) and length
