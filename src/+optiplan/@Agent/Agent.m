@@ -31,7 +31,11 @@ classdef Agent < optiplan.utils.OMPBaseClass
         Y % vector of output predictions from u_0 to u_{N-1}
         Size % size of the agent as [width; height]
     end
-
+    properties
+        ConstraintsFun % function of constraints cons(X, U, Y, agent)
+        ObjectiveFun % objective function obj(X, U, Y, agent)
+    end
+    
     methods
 
         function obj = Agent(varargin)
@@ -84,6 +88,26 @@ classdef Agent < optiplan.utils.OMPBaseClass
             obj.Internal.instantiated = false;
         end
         
+        function set.ConstraintsFun(obj, value)
+            % constraints(X, U, Y, agent)
+            
+            assert(isa(value, 'function_handle'), 'The value must be a function handle.');
+            if nargin(value)~=4
+                error('The function must take 4 inputs: X, U, Y, agent');
+            end
+            obj.ConstraintsFun = value;
+        end
+        
+        function set.ObjectiveFun(obj, value)
+            % obj(X, U, Y, agent)
+            
+            assert(isa(value, 'function_handle'), 'The value must be a function handle.');
+            if nargin(value)~=4
+                error('The function must take 4 inputs: X, U, Y, agent');
+            end
+            obj.ObjectiveFun = value;
+        end
+
 %         function xn = update(obj, x, u)
 %             % Returns the successor state
 %             
@@ -151,12 +175,30 @@ classdef Agent < optiplan.utils.OMPBaseClass
             outputorder = data.outputorder;
         end
         
+        function J = objective(obj)
+            % Creates YALMIP objective for the object
+
+            J = objective@optiplan.utils.OMPBaseClass(obj);
+            
+            % add a custom nonlinear objective
+            if ~isempty(obj.ObjectiveFun)
+                % aggregate variables over the whole horizon
+                J = J + obj.ObjectiveFun(obj.X.aggregate(), ...
+                    obj.U.aggregate(), obj.Y.aggregate(), obj);
+            end
+        end
+        
         function cons = constraints(obj)
             % Creates YALMIP constraints of the object
-            %
 
             cons = constraints@optiplan.utils.OMPBaseClass(obj);
             
+            % add custom nonlinear constraints over the whole horizon
+            if ~isempty(obj.ConstraintsFun)
+                cons = cons + obj.ConstraintsFun(obj.X.aggregate(), ...
+                    obj.U.aggregate(), obj.Y.aggregate(), obj);
+            end
+
             % adjust ymin/ymax constraints to geometry of the agent. simply
             % put, we need to tighten ymin/ymax bounds such that they are
             % not violated by (y_k+size_k/2) where size_k is the size of

@@ -22,33 +22,57 @@ end
 
 function test_setStateEq1(testInput)
 agent = optiplan.NonlinearAgent('nx', 4, 'nu', 2, 'ny', 2, 'PredictionHorizon', 10);
+% input must be a function handle
 msg = optiplan.utils.run_in_caller('agent.StateEq = 1');
 optiplan.utils.assert_errmsg(msg, 'The value must be a function handle.');
+% the function must take 3 inputs
 h = @(x, u) eye(4)*x+ones(4, 2)*u;
+msg = optiplan.utils.run_in_caller('agent.StateEq = h');
+optiplan.utils.assert_errmsg(msg, 'The function must take 3 inputs: x(k), u(k), agent');
+% correct function
+h = @(x, u, a) eye(4)*x+ones(4, 2)*u;
 agent.StateEq = h;
 end
 
 function test_setOutputEq1(testInput)
 agent = optiplan.NonlinearAgent('nx', 4, 'nu', 2, 'ny', 2, 'PredictionHorizon', 10);
+% input must be a function handle
 msg = optiplan.utils.run_in_caller('agent.OutputEq = 1');
 optiplan.utils.assert_errmsg(msg, 'The value must be a function handle.');
+% the function must take 3 inputs
 h = @(x, u) eye(4)*x+ones(4, 2)*u;
+msg = optiplan.utils.run_in_caller('agent.OutputEq = h');
+optiplan.utils.assert_errmsg(msg, 'The function must take 3 inputs: x(k), u(k), agent');
+% correct function
+h = @(x, u, a) eye(4)*x+ones(4, 2)*u;
 agent.OutputEq = h;
 end
 
 function test_setConstraintsFun1(testInput)
 agent = optiplan.NonlinearAgent('nx', 4, 'nu', 2, 'ny', 2, 'PredictionHorizon', 10);
-msg = optiplan.utils.run_in_caller('agent.OutputEq = 1');
+% input must be a function handle
+msg = optiplan.utils.run_in_caller('agent.ConstraintsFun = 1');
 optiplan.utils.assert_errmsg(msg, 'The value must be a function handle.');
+% the function must take 4 inputs
 h = @(x, u, y) x;
+msg = optiplan.utils.run_in_caller('agent.ConstraintsFun = h');
+optiplan.utils.assert_errmsg(msg, 'The function must take 4 inputs: X, U, Y, agent');
+% correct function
+h = @(x, u, y, a) x;
 agent.ConstraintsFun = h;
 end
 
 function test_setObjectiveFun1(testInput)
 agent = optiplan.NonlinearAgent('nx', 4, 'nu', 2, 'ny', 2, 'PredictionHorizon', 10);
-msg = optiplan.utils.run_in_caller('agent.OutputEq = 1');
+% input must be a function handle
+msg = optiplan.utils.run_in_caller('agent.ObjectiveFun = 1');
 optiplan.utils.assert_errmsg(msg, 'The value must be a function handle.');
-h = @(x, u, y) 1;
+% the function must take 4 inputs
+h = @(x, u, y) x;
+msg = optiplan.utils.run_in_caller('agent.ObjectiveFun = h');
+optiplan.utils.assert_errmsg(msg, 'The function must take 4 inputs: X, U, Y, agent');
+% correct function
+h = @(x, u, y, a) x;
 agent.ObjectiveFun = h;
 end
 
@@ -69,8 +93,8 @@ agent.Y.Reference = [30; 30];
 agent.U.Reference = [0; 0];
 agent.X.Reference = zeros(4, 1);
 agent.Size.Value = [1; 1];
-agent.StateEq = @(x, u) data.A*x+data.B*u;
-agent.OutputEq = @(x, u) data.C*x;
+agent.StateEq = @(x, u, ~) data.A*x+data.B*u;
+agent.OutputEq = @(x, u, ~) data.C*x;
 
 obstacles = [];
 p = optiplan.Planner(agent, obstacles, 'solver', 'gurobi');
