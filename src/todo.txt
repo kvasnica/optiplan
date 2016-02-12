@@ -59,3 +59,4 @@ DONE:
 * Planner: minimal separation gap
 * Simulator/run: support radar (must handle Obstacle.Visible)
 * Simulator/plot: support radar (must handle Obstacle.Visible)
+* Agent: custom constraints/objective via ConstraintsFun and ObjectiveFun
