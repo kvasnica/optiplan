@@ -113,14 +113,21 @@ classdef AgentSignal < optiplan.utils.FilterBehavior & optiplan.utils.IterableBe
         function out = double(obj, k)
             % Returns optimized value of the signal
             
-            
             if nargin==2
-                out = value(obj.Var(:, :, k));
+                v = obj.Var(:, :, k);
             else
-                out = [];
-                for k = 1:obj.N
-                    out = [out, value(obj.Var(:, :, k))];
-                end
+                v = obj.squeeze();
+            end
+            out = value(v);
+        end
+        
+        function out = squeeze(obj)
+            % Aggregates variables
+            
+            assert(obj.is_instantiated(), 'Signal is not instantiated.');
+            out = [];
+            for k = 1:obj.N
+                out = [out, obj.Var(:, :, k)];
             end
         end
 

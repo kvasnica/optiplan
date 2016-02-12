@@ -42,7 +42,25 @@ z.Max = v; assert(isequal(z.Max, v));
 z.Reference = v; assert(isequal(z.Reference, v));
 z.Penalty = M; assert(isequal(z.Penalty, M));
 
+%% AgentSignal.squeeze() works with matrices?
+k = 2;
+z = AgentSignal([n k], m);
+z.instantiate();
+v = z.squeeze();
+assert(isa(v, 'sdpvar'));
+assert(size(v, 1)==n);
+assert(size(v, 2)==k*m);
+
+%% AgentSignal.squeeze() works with vectors?
+z = AgentSignal([n 1], m);
+z.instantiate();
+v = z.squeeze();
+assert(isa(v, 'sdpvar'));
+assert(size(v, 1)==n);
+assert(size(v, 2)==m);
+
 %% must not be instantiated at the beginning
+z = AgentSignal([n 1], m);
 assert(isempty(z.Var));
 
 %% must not uninstantiate if it was not instantiated before
