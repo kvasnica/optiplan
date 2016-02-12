@@ -183,8 +183,8 @@ classdef Agent < optiplan.utils.OMPBaseClass
             % add a custom nonlinear objective
             if ~isempty(obj.ObjectiveFun)
                 % aggregate variables over the whole horizon
-                J = J + obj.ObjectiveFun(obj.X.aggregate(), ...
-                    obj.U.aggregate(), obj.Y.aggregate(), obj);
+                J = J + obj.ObjectiveFun(obj.X.squeeze(), ...
+                    obj.U.squeeze(), obj.Y.squeeze(), obj);
             end
         end
         
@@ -195,8 +195,8 @@ classdef Agent < optiplan.utils.OMPBaseClass
             
             % add custom nonlinear constraints over the whole horizon
             if ~isempty(obj.ConstraintsFun)
-                cons = cons + obj.ConstraintsFun(obj.X.aggregate(), ...
-                    obj.U.aggregate(), obj.Y.aggregate(), obj);
+                cons = cons + obj.ConstraintsFun(obj.X.squeeze(), ...
+                    obj.U.squeeze(), obj.Y.squeeze(), obj);
             end
 
             % adjust ymin/ymax constraints to geometry of the agent. simply
