@@ -41,6 +41,6 @@ psim = optiplan.Simulator(planner);
 % set the time-varying reference
 psim.Parameters.Agent.Y.Reference = yref;
 % run the simulation
-psim.run(x0, Nsim);
+psim.run(x0, Nsim, 'Preview', false);
 % plot the results
 psim.plot('Trail', true, 'Reference', false);
