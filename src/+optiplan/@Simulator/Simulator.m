@@ -115,7 +115,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             end
 
             % read dynamics
-            if isa(obj.Planner.Agent, 'LinearAgent')
+            if isa(obj.Planner.Agent, 'optiplan.LinearAgent')
                 f = {'A', 'B', 'C', 'D', 'f', 'g'};
                 for i = 1:length(f)
                     if obj.hasParameter(sprintf('Agent.%s.Value', f{i}))
