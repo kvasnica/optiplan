@@ -64,7 +64,8 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             %                     and must return true/false depending on
             %                     whether the obstacle can be seen from the
             %                     agent. see "omp_demo7.m" for a demo.
-            %
+            %   'WaitBar' -- whether to display the progress bar 
+            %                (true by default)
             %
             % After the simulation is ran, the results are stored in the
             % psim.Results structure as follows:
@@ -94,8 +95,14 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ip.addParamValue('StateEq', []);
             ip.addParamValue('OutputEq', []);
             ip.addParamValue('RadarDetector', []);
+            ip.addParamValue('WaitBar', true);
             ip.parse(varargin{:});
             Options = ip.Results;
+            
+            if Options.WaitBar
+                wb_handle = waitbar(0, 'Simulating...');
+                onclp = onCleanup(@() delete(wb_handle));
+            end
             
             % check for missing parameters
             [params, missing, missing_names] = obj.readParameters(Nsim);
@@ -132,6 +139,9 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ny = obj.Planner.Agent.ny;
             param_info = obj.Planner.Optimizer.param_info;
             for k = 1:Nsim
+                if Options.WaitBar
+                    waitbar(k/Nsim, wb_handle);
+                end
                 x0 = obj.Results.X(:, end); % last known state
                 % copy parameters from obj.Parameters to
                 % obj.Planner.Parameters
