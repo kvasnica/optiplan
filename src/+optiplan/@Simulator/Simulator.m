@@ -514,6 +514,8 @@ classdef Simulator < optiplan.utils.OMPBaseClass
     methods(Static)
         function T = circularTrajectory(Nsim, varargin)
             % Circular trajectory of a given radius and frequency
+            %
+            %    traj = circularTrajectory(Nsim, 'Radius', r, 'Loops', 1)
             
             ip = inputParser;
             ip.addParamValue('Radius', 0);
