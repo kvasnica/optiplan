@@ -1,5 +1,7 @@
 classdef Planner < optiplan.utils.OMPBaseClass
     % Class representing MPC-based path planners
+    %
+    %   p = Planner(agent, obstacles, 'solver', ...)
 
     % Copyright is with the following author(s):
     %
