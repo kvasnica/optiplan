@@ -88,7 +88,6 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             
             assert(isequal(size(x0), [obj.Planner.Agent.nx, 1]), ...
                 'x0 must be a %dx1 vector.', obj.Planner.Agent.nx);
-            assert(isa(obj.Planner.Agent, 'optiplan.LinearAgent'), 'Only linear agents supported for now.');
 
             ip = inputParser;
             ip.addParamValue('Preview', true, @islogical);
@@ -109,16 +108,18 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             end
 
             % read dynamics
-            f = {'A', 'B', 'C', 'D', 'f', 'g'};
-            for i = 1:length(f)
-                if obj.hasParameter(sprintf('Agent.%s.Value', f{i}))
-                    % read from parameters (already expanded)
-                    simdata.(f{i}) = params.Agent.(f{i}).Value;
-                else
-                    % read from the agent
-                    simdata.(f{i}) = obj.Planner.Agent.(f{i}).Value;
-                    % expand
-                    simdata.(f{i}) = repmat(simdata.(f{i}), 1, Nsim);
+            if isa(obj.Planner.Agent, 'LinearAgent')
+                f = {'A', 'B', 'C', 'D', 'f', 'g'};
+                for i = 1:length(f)
+                    if obj.hasParameter(sprintf('Agent.%s.Value', f{i}))
+                        % read from parameters (already expanded)
+                        simdata.(f{i}) = params.Agent.(f{i}).Value;
+                    else
+                        % read from the agent
+                        simdata.(f{i}) = obj.Planner.Agent.(f{i}).Value;
+                        % expand
+                        simdata.(f{i}) = repmat(simdata.(f{i}), 1, Nsim);
+                    end
                 end
             end
             
@@ -182,9 +183,9 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                     xn = Options.StateEq(x0, u);
                 elseif isa(obj.Planner.Agent, 'optiplan.NonlinearAgent')
                     % nonlinear state update eq. from the agent
-                    xn = Options.Planner.Agent.StateEq(x0, u);
+                    xn = obj.Planner.Agent.StateEq(x0, u, obj.Planner.Agent);
                 else
-                    % linear d?ynamics
+                    % linear dynamics
                     xn = simdata.A(:, ((k-1)*nx+1):(k*nx))*x0+simdata.B(:, ((k-1)*nu+1):(k*nu))*u+simdata.f(:, k);
                 end
                 if ~isempty(Options.OutputEq)
@@ -192,7 +193,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                     y = Options.OutputEq(x0, u);
                 elseif isa(obj.Planner.Agent, 'optiplan.NonlinearAgent')
                     % nonlinear output eq. from the agent
-                    y = Options.Planner.Agent.OutputEq(x0, u);
+                    y = obj.Planner.Agent.OutputEq(x0, u, obj.Planner.Agent);
                 else
                     % linear dynamics
                     y = simdata.C(:, ((k-1)*nx+1):(k*nx))*x0+simdata.D(:, ((k-1)*nu+1):(k*nu))*u+simdata.g(:, k);
