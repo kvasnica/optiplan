@@ -122,7 +122,7 @@ classdef Obstacle < optiplan.utils.OMPBaseClass
                     cons = cons + [ovisible<=sum(dk)<=dmax];
                     
                     % must bound all variables
-                    allvars = [opos; osize; ovisible];
+                    allvars = [opos; osize; ovisible; actual_gap; required_gap; y; asize];
                     if isa(allvars, 'sdpvar')
                         cons = cons + [ -BigBound <= allvars(:) <= BigBound ];
                     end
