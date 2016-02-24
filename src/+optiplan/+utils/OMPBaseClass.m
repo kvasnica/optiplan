@@ -158,7 +158,7 @@ classdef OMPBaseClass < optiplan.utils.FilterBehavior & optiplan.utils.Component
     end
 
     methods(Hidden)
-        % private APIs;
+        % private APIs
         function modules = discover_modules(obj)
             % discover all modules (aka signal keepers) in the object
 
