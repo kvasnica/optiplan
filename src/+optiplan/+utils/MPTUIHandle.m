@@ -22,11 +22,6 @@ classdef MPTUIHandle < dynamicprops & matlab.mixin.Copyable
         %   1.2 (February 24, 2013): added "UserData"
 	end
 
-    methods
-        function obj = MPTUIHandle()
-		end
-	end
-
 	methods(Static)
 		function new = loadobj(obj)
 			% load method

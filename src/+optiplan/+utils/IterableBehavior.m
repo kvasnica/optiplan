@@ -15,11 +15,6 @@ classdef IterableBehavior < handle
     % This project is covered by the GNU GPL2 license. See COPYING for more
     % information.
 
-    methods
-		function obj = IterableBehavior(obj)
-		end
-	end
-	
 	methods(Sealed=true)
 		% sealed methods can not be redefined in a subclass
 		function varargout = forEach(obj, fun, varargin)

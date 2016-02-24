@@ -43,6 +43,10 @@ classdef Agent < optiplan.utils.OMPBaseClass
             %
             %   a = Agent('nx', nx, 'nu', nu, 'ny', ny, 'PredictionHorizon', N)
 
+            if nargin==0
+                return
+            end
+            
             % parse inputs
             ip = inputParser;
             ip.KeepUnmatched = false;
@@ -67,8 +71,6 @@ classdef Agent < optiplan.utils.OMPBaseClass
                 error('The prediction horizon must be provided.');
             end
 
-            obj = obj@optiplan.utils.OMPBaseClass();
-            
             % initialize the object
             obj.nx = S.nx;
             obj.nu = S.nu;
