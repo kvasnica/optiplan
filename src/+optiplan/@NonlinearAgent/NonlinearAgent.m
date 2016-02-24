@@ -62,6 +62,47 @@ classdef NonlinearAgent < optiplan.Agent
                 end
             end
         end
+        
+        function out = linearize(obj, X, U)
+            % Linearizes nonlinear system around a trajectory
+            %
+            %   agent.linearize(Xs, Us)
+            
+            narginchk(3, 3);
+            assert(size(X, 1)==obj.nx, '"X" must have %d row(s).', obj.nx);
+            assert(size(U, 1)==obj.nu, '"U" must have %u row(s).', obj.nu);
+            
+            if ~isfield(obj.Internal, 'LinearizationFuns')
+                % requires symbolic toolbox
+                x = sym('x', [obj.nx 1]);
+                u = sym('u', [obj.nu 1]);
+                fx = matlabFunction(jacobian(obj.StateEq(x, u), x), 'Vars', {x, u});
+                fu = matlabFunction(jacobian(obj.StateEq(x, u), u), 'Vars', {x, u});
+                gx = matlabFunction(jacobian(obj.OutputEq(x, u), x), 'Vars', {x, u});
+                gu = matlabFunction(jacobian(obj.OutputEq(x, u), u), 'Vars', {x, u});
+                obj.Internal.LinearizationFuns = struct('fx', fx, 'fu', fu, ...
+                    'gx', gx, 'gu', gu);
+            end
+            % pad trajectories to correct size
+            out = struct('A', [], 'B', [], 'f', [], 'C', [], 'D', [], 'g', []);
+            funs = obj.Internal.LinearizationFuns;
+            for i = 1:min(size(U, 2), size(X, 2))
+                % linearization points
+                xs = X(:, i);
+                us = U(:, i);
+                if ~isempty(obj.StateEq)
+                    out.A = [ out.A, funs.fx(xs, us) ];
+                    out.B = [ out.B, funs.fu(xs, us) ];
+                    out.f = [ out.f, obj.StateEq(xs, us)-funs.fx(xs, us)*xs-funs.fu(xs, us)*us ];
+                end
+                if ~isempty(obj.OutputEq)
+                    out.C = [ out.C, funs.gx(xs, us) ];
+                    out.D = [ out.D, funs.gu(xs, us) ];
+                    out.g = [ out.g, obj.OutputEq(xs, us)-funs.gx(xs, us)*xs-funs.gu(xs, us)*us ];
+                end
+            end
+        end
+
     end
 
 end
