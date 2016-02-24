@@ -12,9 +12,6 @@ classdef AgentSignal < optiplan.utils.FilterBehavior & optiplan.utils.IterableBe
     properties(Hidden)
         Name = '' % Name of the signal
     end
-    properties(Hidden)
-        UserData % User-defined value
-    end
     properties(SetAccess = protected, Hidden)
         Var % YALMIP variable representing the signal
         Dim = [0 0] % Dimension of the signal

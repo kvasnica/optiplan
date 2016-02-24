@@ -1,4 +1,4 @@
-classdef OMPBaseClass < optiplan.utils.FilterBehavior & optiplan.utils.ComponentBehavior & optiplan.utils.IterableBehavior
+classdef OMPBaseClass < optiplan.utils.FilterBehavior & optiplan.utils.ComponentBehavior & optiplan.utils.IterableBehavior & optiplan.utils.MPTUIHandle
     % Base class from which Agent and Obstacle inherit
 
     % Copyright is with the following author(s):
@@ -8,10 +8,6 @@ classdef OMPBaseClass < optiplan.utils.FilterBehavior & optiplan.utils.Component
     %
     % This project is covered by the GNU GPL2 license. See COPYING for more
     % information.
-
-    properties(Hidden)
-        UserData
-    end
 
     methods
         function params = getParameters(obj, prefix)

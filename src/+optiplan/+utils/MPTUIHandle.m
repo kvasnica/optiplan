@@ -11,11 +11,15 @@ classdef MPTUIHandle < dynamicprops & matlab.mixin.Copyable
 
     properties(Hidden,SetAccess=protected)
         Internal
-	end
+    end
+    properties(Hidden)
+        UserData
+    end
 	properties(Hidden,Constant)
-		Version = 1.1
+		Version = 1.2
 		% History:
 		%   1.1 (June 5, 2013): "internal_properties" changed to "Internal"
+        %   1.2 (February 24, 2013): added "UserData"
 	end
 
     methods
