@@ -104,6 +104,19 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 onclp = onCleanup(@() delete(wb_handle));
             end
             
+            if isa(obj.Planner.Agent, 'optiplan.LinearizedAgent')
+                % initial linearization to prevent dynamics to show up as a
+                % missing parameter (only for LinearizedAgent currently)
+                if ~isfield(obj.UserData, 'Xlin')
+                    error('%s.UserData.Xlin must be provided.', inputname(1));
+                end
+                if ~isfield(obj.UserData, 'Ulin')
+                    error('%s.UserData.Ulin must be provided.', inputname(1));
+                end
+                obj.Parameters = obj.Planner.computeParameters(obj.Parameters, ...
+                    obj.UserData.Xlin(:, 1), obj.UserData.Ulin(:, 1));
+            end
+            
             % check for missing parameters
             [params, missing, missing_names] = obj.readParameters(Nsim);
             if any(missing)
@@ -115,7 +128,8 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             end
 
             % read dynamics
-            if isa(obj.Planner.Agent, 'optiplan.LinearAgent')
+            if isa(obj.Planner.Agent, 'optiplan.LinearAgent') && ...
+                    ~isa(obj.Planner.Agent, 'optiplan.LinearizedAgent')
                 f = {'A', 'B', 'C', 'D', 'f', 'g'};
                 for i = 1:length(f)
                     if obj.hasParameter(sprintf('Agent.%s.Value', f{i}))
@@ -182,6 +196,24 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                     end
                 end
 
+                % linearization around trajectory
+                if isempty(obj.UserData)
+                    Xlin = [];
+                    Ulin = [];
+                elseif isempty(obj.Results.Predictions)
+                    % default linearization
+                    Xlin = obj.UserData.Xlin;
+                    Ulin = obj.UserData.Ulin;
+                else
+                    % linearize around previous prediction shifted one step
+                    % into the future
+                    Xlin = obj.Results.Predictions(end).X(:, 2:end);
+                    Ulin = obj.Results.Predictions(end).U(:, [2:end end]);
+                end
+                % tell the planner to update agent's dynamics via
+                % linearization around a given trajectory
+                obj.Planner.computeParameters(Xlin, Ulin);
+                
                 % optimize
                 [u, prob, openloop] = obj.Planner.optimize(x0);
                 if prob~=0

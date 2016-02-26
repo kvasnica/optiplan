@@ -1,6 +1,5 @@
 TODO/high-priority:
-* nonlinear dynamics (need more tests)
-* Simulator/run: linearize plant around a trajectory
+* state estimation (especially for linearized dynamics)
 
 TODO/middle-priority:
 * Simulator: support multiple planners
@@ -60,3 +59,8 @@ DONE:
 * Simulator/run: support radar (must handle Obstacle.Visible)
 * Simulator/plot: support radar (must handle Obstacle.Visible)
 * Agent: custom constraints/objective via ConstraintsFun and ObjectiveFun
+* nonlinear dynamics (need more tests)
+* Simulator/run: linearize plant around a trajectory
+* NonlinearAgent: accept Linearizer
+* NonlinearAgent: discretize() method
+* LinearizedAgent class

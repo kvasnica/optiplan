@@ -138,6 +138,23 @@ classdef Planner < optiplan.utils.OMPBaseClass
             listParameters@optiplan.utils.OMPBaseClass(obj, prefix);
         end
         
+        function params = computeParameters(obj, varargin)
+            % Compute parameters (e.g. linearization)
+            
+            if nargout==0
+                params = obj.Parameters;
+                args = varargin;
+            else
+                params = varargin{1};
+                args = varargin(2:end);
+            end
+            params.Agent = obj.Agent.computeParameters(params.Agent, args{:});
+            for i = 1:length(params.Obstacles)
+                params.Obstacles(i) = obj.Obstacles(i).computeParameters(params.Obstacles(i), args{:});
+            end
+            obj.Parameters = params;
+        end
+
         function [inputs, missing] = readParameters(obj)
             % Prepares inputs for the optimizer
             

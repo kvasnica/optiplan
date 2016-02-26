@@ -150,6 +150,12 @@ classdef OMPBaseClass < optiplan.utils.FilterBehavior & optiplan.utils.Component
                     mat2str(v.Dim));
             end
         end
+        
+        function params = computeParameters(obj, params, varargin)
+            % Compute parameters (e.g. linearization)
+            
+            % does nothing unless overloaded
+        end
 
     end
 
