@@ -381,6 +381,8 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                         opos = params.Obstacles(i).Position(:, k);
                         osize = params.Obstacles(i).Size(:, k);
                         cansee = Options.RadarDetector(apos, opos, osize);
+                    elseif ~isfield(params.Obstacles(i), 'Visible')
+                        cansee = obj.Planner.Obstacles(i).Visible.Value(1);
                     else
                         cansee = true;
                     end
