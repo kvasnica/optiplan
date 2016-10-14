@@ -84,7 +84,8 @@ classdef LinearAgent < optiplan.Agent
             %
             % see "help optiplan.LinearAgent.demo2D
             
-            A = [1 0; Ts 1]; B = [Ts; 0.5*Ts^2]; C = [0 1];
+            A = [1 0; Ts 1]; B = [Ts; 0]; C = [0 1];
+%             A = [1 0; Ts 1]; B = [Ts; Ts^2]; C = [0 1];
             mpcoptions.A = [A, zeros(2); zeros(2) A];
             mpcoptions.B = [B zeros(2, 1); zeros(2, 1) B];
             mpcoptions.f = zeros(4, 1);
@@ -165,7 +166,7 @@ classdef LinearAgent < optiplan.Agent
             agent = optiplan.LinearAgent('nx', 4, 'nu', 2, 'ny', 2, ...
                 'PredictionHorizon', options.PredictionHorizon);
             
-            % sample dynamics/constaints
+            % sample dynamics/constraints
             mpcoptions = optiplan.LinearAgent.demo2Ddata(options.SamplingTime);
             
             % dynamics

@@ -7,6 +7,7 @@ ip.addParamValue('MinSize', []);
 ip.addParamValue('Color', 'y');
 ip.addParamValue('Wire', false);
 ip.addParamValue('EdgeColor', 'k');
+ip.addParamValue('LineWidth', 1);
 ip.parse(varargin{:});
 Options = ip.Results;
 
@@ -24,9 +25,11 @@ pos = [Options.Position(1)-Options.Size(1)/2, ...
 h = rectangle('Position', pos);
 if Options.Wire
     set(h, 'EdgeColor', Options.Color);
+    set(h, 'LineWidth', Options.LineWidth);
 else
     set(h, 'FaceColor', Options.Color);
     set(h, 'EdgeColor', Options.EdgeColor);
+    set(h, 'LineWidth', Options.LineWidth);
 end
 
 if nargout==0
