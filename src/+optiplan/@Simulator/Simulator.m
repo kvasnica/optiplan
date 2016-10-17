@@ -333,9 +333,9 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 if Options.MixedInteger == false
                     obj.Parameters.Agent.Y.Max(:,k) = obj.Planner.Parameters.Agent.Y.Max(:, 1);
                     obj.Parameters.Agent.Y.Min(:,k) = obj.Planner.Parameters.Agent.Y.Min(:, 1);
+                    obj.Results.ConsPrediction(k).Y.Max = obj.Planner.Parameters.Agent.Y.Max;
+                    obj.Results.ConsPrediction(k).Y.Min = obj.Planner.Parameters.Agent.Y.Min;
                 end
-                obj.Results.ConsPrediction(k).Y.Max = obj.Planner.Parameters.Agent.Y.Max;
-                obj.Results.ConsPrediction(k).Y.Min = obj.Planner.Parameters.Agent.Y.Min;
                 if isempty(obj.Results.Predictions)
                     obj.Results.Predictions = openloop;
                 else
@@ -745,26 +745,26 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             T = repmat(T, 1, Options.Loops);
             T = T(:, 1:Nsim+1);
         end
-        function T = pointwiseTrajectory(Nsim, waypoints)
-            % Piecewise trajectory connecting given waypoints
-            
-            T = waypoints(:,1);
-            npoints = size(waypoints, 2);
-            for i = 2:npoints
-                T = [T, repmat(waypoints(:, i), 1, round(Nsim/(npoints-1)-1))];
-            end
-%             T = [T(:, 1:Nsim),waypoints(:,npoints)];
-        end
 %         function T = pointwiseTrajectory(Nsim, waypoints)
 %             % Piecewise trajectory connecting given waypoints
 %             
-%             T = [];
+%             T = waypoints(:,1);
 %             npoints = size(waypoints, 2);
-%             for i = 1:npoints
-%                 T = [T, repmat(waypoints(:, i), 1, ceil(Nsim/npoints))];
+%             for i = 2:npoints
+%                 T = [T, repmat(waypoints(:, i), 1, round(Nsim/(npoints-1)-1))];
 %             end
-%             T = [T(:, 1:Nsim),waypoints(:,npoints)];
+% %             T = [T(:, 1:Nsim),waypoints(:,npoints)];
 %         end
+        function T = pointwiseTrajectory(Nsim, waypoints)
+            % Piecewise trajectory connecting given waypoints
+            
+            T = [];
+            npoints = size(waypoints, 2);
+            for i = 1:npoints
+                T = [T, repmat(waypoints(:, i), 1, ceil(Nsim/npoints))];
+            end
+            T = [T(:, 1:Nsim),waypoints(:,npoints)];
+        end
         function T = straightwayTrajectory(Nsim, waypoints, varargin)
             % Piecewise trajectory connecting given waypoints
 
