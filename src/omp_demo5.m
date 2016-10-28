@@ -3,6 +3,7 @@
 clear
 yalmip clear
 close all
+clc
 
 %% set up the playground
 N = 30;     % prediction horizon
@@ -21,9 +22,9 @@ for i = 1:length(obstacles)
 end
 % positions of respective obstacles:
 obstacles(1).Position.Value = [0; 10];
-obstacles(2).Position.Value = [10; 0];
+obstacles(2).Position.Value = [-10; 0];
 obstacles(3).Position.Value = [0; -10];
-obstacles(4).Position.Value = [-10; 0];
+obstacles(4).Position.Value = [10; 0];
 % the planner optimizes agent's motion
 minsep = agent.Size.Value; % minimal separation gap between the agent and the obstacles
 planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep, 'solver', 'gurobi');
@@ -33,11 +34,13 @@ planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep, 'solver', 
 psim = optiplan.Simulator(planner);
 % simulation parameters
 x0 = [0; 0; 0; 0]; % initial point
-Nsim = 200; % number of simulation steps
+Nsim = 300; % number of simulation steps
 % use a circular reference
 yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
 psim.Parameters.Agent.Y.Reference = yref;
 % run the simulation
 psim.run(x0, Nsim);
-% plot the results
-psim.plot('Constraints', false, 'axis', [-15 15 -15 15], 'Reference', true, 'trail', true);
+%% plot the results
+psim.plot('Constraints', false, 'axis', [-15 15 -15 15], 'Reference', true,...
+    'trail', true, 'predictions', true, 'predsteps', 10, 'delay', 0.1,...
+    'textSize', 24, 'textFont', 'CMU Serif');

@@ -90,4 +90,4 @@ psim.Parameters.Agent.Y.Reference = psim.circularTrajectory(Nsim, ...
 % Run the simulation
 x0 = [-R; 0; 0; 0];
 psim.run(x0, Nsim)
-psim.plot('Axis', [-10 10 -10 10], 'Reference', true, 'Predictions', true)
+psim.plot('Axis', [-10 10 -10 10], 'Reference', true, 'Predictions', true, 'trail', true)

@@ -34,7 +34,7 @@ Ts = 1; % sampling time
 A = eye(2); B = Ts*eye(2);  % x(k+1) = A*x(k) + B*u(k)
 nx = 2; nu = 2; ny = 2;
 % The horizon must be long enough for the agent to be able to reach the
-% final location despite constaints on the overal speed
+% final location despite constraints on the overal speed
 N = 30; 
 agent = optiplan.LinearAgent('Nx', 2, 'Nu', 2, 'Ny', 2, 'PredictionHorizon', N);
 agent.Size.Value = [0.5; 0.5]; % width and height of the agent

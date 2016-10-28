@@ -34,6 +34,19 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             obj.Results.Y = [];
             obj.Results.Predictions = [];
         end
+        
+        function generateConstraints(obj, yref, Nsim, con)
+%             con = [1.5*asize(1); 11*asize(2)];
+            for k = 1:Nsim
+                if abs(yref(1,k) - yref(1,k+1)) <= abs(yref(2,k) - yref(2,k+1))
+                    obj.Parameters.Agent.Y.Min(:,k) = [yref(1,k)-con(2);yref(2,k)-con(1)];
+                    obj.Parameters.Agent.Y.Max(:,k) = [yref(1,k)+con(2);yref(2,k)+con(1)];
+                else
+                    obj.Parameters.Agent.Y.Min(:,k) = [yref(1,k)-con(1);yref(2,k)-con(2)];
+                    obj.Parameters.Agent.Y.Max(:,k) = [yref(1,k)+con(1);yref(2,k)+con(2)];
+                end
+            end
+        end
 
         function run(obj, x0, Nsim, varargin)
             % Runs a closed-loop simulation
@@ -178,6 +191,13 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                     end
                     obj.Planner.Parameters.(pi.module)(pi.module_index).(pi.signal).(pi.property) = value;
                 end
+                
+                if Options.MixedInteger == false && isempty(Options.RadarDetector)
+                    for i = 1:length(obj.Planner.Obstacles)
+                        timevarConstraints(obj,k,Options,N,i);
+                    end
+                end
+                
                 % radar detection
                 if ~isempty(Options.RadarDetector)
                     for i = 1:length(obj.Planner.Obstacles)
@@ -198,76 +218,11 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                             % TODO: need a better initialization
                             cansee = 0;
                         end
-                        if Options.MovingObs == true
-                            ob_max = [];
-                            ob_min = [];
-                            ob_max(:,1:N) = obj.Planner.Parameters.Obstacles(i).Position.Value + repmat(obj.Planner.Obstacles(i).Size.Value/2, 1, N);
-                            ob_min(:,1:N) = obj.Planner.Parameters.Obstacles(i).Position.Value - repmat(obj.Planner.Obstacles(i).Size.Value/2, 1, N);
-                        else
-                            ob_max = obj.Planner.Obstacles(i).Position.Value + obj.Planner.Obstacles(i).Size.Value/2;
-                            ob_min = obj.Planner.Obstacles(i).Position.Value - obj.Planner.Obstacles(i).Size.Value/2;
-                        end
-                        asize = obj.Planner.Agent.Size.Value;
                         if Options.MixedInteger == true
                             obj.Planner.Parameters.Obstacles(i).Visible.Value = repmat(cansee, 1, obj.Planner.Agent.N);
                         else
                             if cansee == 1
-                                for kk = 1:N-1
-                                    if abs(obj.Planner.Parameters.Agent.Y.Reference(1,kk) - obj.Planner.Parameters.Agent.Y.Reference(1,kk+1))...
-                                    <= abs(obj.Planner.Parameters.Agent.Y.Reference(2,kk) - obj.Planner.Parameters.Agent.Y.Reference(2,kk+1))
-                                        if Options.MovingObs == true
-                                            if obj.Planner.Parameters.Agent.Y.Max(2,kk) > (ob_min(2,kk))...
-                                                    && obj.Planner.Parameters.Agent.Y.Min(2,kk) < (ob_max(2,kk));
-                                                if obj.Planner.Parameters.Agent.Y.Max(1,kk) > ob_min(1,kk)...
-                                                        && obj.Planner.Parameters.Agent.Y.Min(1,kk) < ob_max(1,kk);
-                                                    if obj.Planner.Parameters.Obstacles(i).Position.Value(1,kk) <= obj.Results.Predictions(k-1).Y(1,kk)
-                                                        obj.Planner.Parameters.Agent.Y.Min(1,kk) = ob_max(1,kk) + 1*asize(1);
-                                                    else
-                                                        obj.Planner.Parameters.Agent.Y.Max(1,kk) = ob_min(1,kk) - 1*asize(1);
-                                                    end
-                                                end
-                                            end
-                                        else
-                                            if obj.Planner.Parameters.Agent.Y.Max(2,kk) > (ob_min(2))...
-                                                    && obj.Planner.Parameters.Agent.Y.Min(2,kk) < (ob_max(2));
-                                                if obj.Planner.Parameters.Agent.Y.Max(1,kk) > ob_min(1)...
-                                                        && obj.Planner.Parameters.Agent.Y.Min(1,kk) < ob_max(1);
-                                                    if obj.Planner.Obstacles(i).Position.Value(1) <= obj.Results.Predictions(k-1).Y(1,kk)
-                                                        obj.Planner.Parameters.Agent.Y.Min(1,kk) = ob_max(1) + 1*asize(1);
-                                                    else
-                                                        obj.Planner.Parameters.Agent.Y.Max(1,kk) = ob_min(1) - 1*asize(1);
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    else
-                                        if Options.MovingObs == true
-                                            if obj.Planner.Parameters.Agent.Y.Max(1,kk) > (ob_min(1,kk))...
-                                                    && obj.Planner.Parameters.Agent.Y.Min(1,kk) < (ob_max(1,kk));
-                                                if obj.Planner.Parameters.Agent.Y.Max(2,kk) > ob_min(2,kk)...
-                                                        && obj.Planner.Parameters.Agent.Y.Min(2,kk) < ob_max(2,kk);
-                                                    if obj.Planner.Parameters.Obstacles(i).Position.Value(2,kk) <= obj.Results.Predictions(k-1).Y(2,kk)
-                                                        obj.Planner.Parameters.Agent.Y.Min(2,kk) = ob_max(2,kk) + 1*asize(2);
-                                                    else
-                                                        obj.Planner.Parameters.Agent.Y.Max(2,kk) = ob_min(2,kk) - 1*asize(2);
-                                                    end
-                                                end
-                                            end
-                                        else
-                                            if obj.Planner.Parameters.Agent.Y.Max(1,kk) > (ob_min(1))...
-                                                    && obj.Planner.Parameters.Agent.Y.Min(1,kk) < (ob_max(1));
-                                                if obj.Planner.Parameters.Agent.Y.Max(2,kk) > ob_min(2)...
-                                                        && obj.Planner.Parameters.Agent.Y.Min(2,kk) < ob_max(2);
-                                                    if obj.Planner.Obstacles(i).Position.Value(2) <= obj.Results.Predictions(k-1).Y(2,kk)
-                                                        obj.Planner.Parameters.Agent.Y.Min(2,kk) = ob_max(2) + 1*asize(2);
-                                                    else
-                                                        obj.Planner.Parameters.Agent.Y.Max(2,kk) = ob_min(2) - 1*asize(2);
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
+                                timevarConstraints(obj,k,Options,N,i);
                             end
                         end
                     end
@@ -360,6 +315,77 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             end
         end
         
+        function timevarConstraints(obj,k,Options,N,i)
+            if k>1
+                if Options.MovingObs == true
+                    ob_max = [];
+                    ob_min = [];
+                    ob_max(:,1:N) = obj.Planner.Parameters.Obstacles(i).Position.Value + repmat(obj.Planner.Obstacles(i).Size.Value/2, 1, N);
+                    ob_min(:,1:N) = obj.Planner.Parameters.Obstacles(i).Position.Value - repmat(obj.Planner.Obstacles(i).Size.Value/2, 1, N);
+                else
+                    ob_max = obj.Planner.Obstacles(i).Position.Value + obj.Planner.Obstacles(i).Size.Value/2;
+                    ob_min = obj.Planner.Obstacles(i).Position.Value - obj.Planner.Obstacles(i).Size.Value/2;
+                end
+                asize = obj.Planner.Agent.Size.Value;
+                for kk = 1:N-1
+                    if abs(obj.Planner.Parameters.Agent.Y.Reference(1,kk) - obj.Planner.Parameters.Agent.Y.Reference(1,kk+1))...
+                    <= abs(obj.Planner.Parameters.Agent.Y.Reference(2,kk) - obj.Planner.Parameters.Agent.Y.Reference(2,kk+1))
+                        if Options.MovingObs == true
+                            if obj.Planner.Parameters.Agent.Y.Max(2,kk) > (ob_min(2,kk))...
+                                    && obj.Planner.Parameters.Agent.Y.Min(2,kk) < (ob_max(2,kk));
+                                if obj.Planner.Parameters.Agent.Y.Max(1,kk) > ob_min(1,kk)...
+                                        && obj.Planner.Parameters.Agent.Y.Min(1,kk) < ob_max(1,kk);
+                                    if obj.Planner.Parameters.Obstacles(i).Position.Value(1,kk) <= obj.Results.Predictions(k-1).Y(1,kk)
+                                        obj.Planner.Parameters.Agent.Y.Min(1,kk) = ob_max(1,kk) + 1*asize(1);
+                                    else
+                                        obj.Planner.Parameters.Agent.Y.Max(1,kk) = ob_min(1,kk) - 1*asize(1);
+                                    end
+                                end
+                            end
+                        else
+                            if obj.Planner.Parameters.Agent.Y.Max(2,kk) > (ob_min(2))...
+                                    && obj.Planner.Parameters.Agent.Y.Min(2,kk) < (ob_max(2));
+                                if obj.Planner.Parameters.Agent.Y.Max(1,kk) > ob_min(1)...
+                                        && obj.Planner.Parameters.Agent.Y.Min(1,kk) < ob_max(1);
+                                    if obj.Planner.Obstacles(i).Position.Value(1) <= obj.Results.Predictions(k-1).Y(1,kk)
+                                        obj.Planner.Parameters.Agent.Y.Min(1,kk) = ob_max(1) + 1*asize(1);
+                                    else
+                                        obj.Planner.Parameters.Agent.Y.Max(1,kk) = ob_min(1) - 1*asize(1);
+                                    end
+                                end
+                            end
+                        end
+                    else
+                        if Options.MovingObs == true
+                            if obj.Planner.Parameters.Agent.Y.Max(1,kk) > (ob_min(1,kk))...
+                                    && obj.Planner.Parameters.Agent.Y.Min(1,kk) < (ob_max(1,kk));
+                                if obj.Planner.Parameters.Agent.Y.Max(2,kk) > ob_min(2,kk)...
+                                        && obj.Planner.Parameters.Agent.Y.Min(2,kk) < ob_max(2,kk);
+                                    if obj.Planner.Parameters.Obstacles(i).Position.Value(2,kk) <= obj.Results.Predictions(k-1).Y(2,kk)
+                                        obj.Planner.Parameters.Agent.Y.Min(2,kk) = ob_max(2,kk) + 1*asize(2);
+                                    else
+                                        obj.Planner.Parameters.Agent.Y.Max(2,kk) = ob_min(2,kk) - 1*asize(2);
+                                    end
+                                end
+                            end
+                        else
+                            if obj.Planner.Parameters.Agent.Y.Max(1,kk) > (ob_min(1))...
+                                    && obj.Planner.Parameters.Agent.Y.Min(1,kk) < (ob_max(1));
+                                if obj.Planner.Parameters.Agent.Y.Max(2,kk) > ob_min(2)...
+                                        && obj.Planner.Parameters.Agent.Y.Min(2,kk) < ob_max(2);
+                                    if obj.Planner.Obstacles(i).Position.Value(2) <= obj.Results.Predictions(k-1).Y(2,kk)
+                                        obj.Planner.Parameters.Agent.Y.Min(2,kk) = ob_max(2) + 1*asize(2);
+                                    else
+                                        obj.Planner.Parameters.Agent.Y.Max(2,kk) = ob_min(2) - 1*asize(2);
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
         function plot(obj, varargin)
             % Visualize the closed-loop simulation
             
@@ -375,7 +401,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ip.addParamValue('TrailColor', 'm');
             ip.addParamValue('TrailStyle', '-');
             ip.addParamValue('TrailWidth', 2);
-            ip.addParamValue('Constraints', true);
+            ip.addParamValue('Constraints', false);
             ip.addParamValue('ConstraintsColor', 'k');
             ip.addParamValue('ConstraintsStyle', '-');
             ip.addParamValue('ConstraintsWidth', 3);
@@ -403,10 +429,11 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ip.addParamValue('RadarDetector', []);
             ip.addParamValue('RadarPlotter', []);
             ip.addParamValue('Loops', 1);
-            ip.addParamValue('ObsEdgeWidth', 1);
+            ip.addParamValue('ObsEdgeWidth', 2);
             ip.addParamValue('ABtrajectory', false);
             ip.addParamValue('textSize', 12);
             ip.addParamValue('textFont', 'Helvetica');
+            ip.addParamValue('MixedInteger', true);
             ip.parse(varargin{:});
             Options = ip.Results;
             
@@ -470,7 +497,9 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             
             % main figure
             scenefig = figure('Color','white');
+            % set the figure fullscreen
 %             set(scenefig,'Units','normalized','Position', [0 0 1 1])
+            pause(2);
             hold on;box on
             axis(Options.Axis);
             if ~isempty(Options.AxisType)
@@ -554,7 +583,11 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                         apos = obj.Results.Y(:, k);
                         opos = params.Obstacles(i).Position(:, k);
                         osize = params.Obstacles(i).Size(:, k);
-                        cansee = Options.RadarDetector(apos, opos, osize);
+                        if Options.MixedInteger == false
+                            cansee = obj.Planner.Obstacles(i).Visible.Value(1);
+                        else
+                            cansee = Options.RadarDetector(apos, opos, osize);
+                        end
                     elseif ~isfield(params.Obstacles(i), 'Visible')
                         cansee = obj.Planner.Obstacles(i).Visible.Value(1);
                     else
@@ -628,18 +661,18 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 title(sprintf('Simulation step: %d/%d', k, Nsim));
                 pause(Options.Delay);
                 
-%                 if k == 120
+%                 if k == 50
 % %                     saveas(gcf,'scrn-QP-14.eps','eps2c');
-%                     export_fig scrn-QP-14.eps -depsc;
-%                 elseif k == 230
+%                     export_fig scrn-QPmvObsRad-14.eps -depsc;
+%                 elseif k == 100
 % %                     saveas(gcf,'scrn-QP-24.eps','eps2c');
-%                     export_fig scrn-QP-24.eps -depsc;
-%                 elseif k == 320
+%                     export_fig scrn-QPmvObsRad-24.eps -depsc;
+%                 elseif k == 150
 % %                     saveas(gcf,'scrn-QP-34.eps','eps2c');
-%                     export_fig scrn-QP-34.eps -depsc;
+%                     export_fig scrn-QPmvObsRad-34.eps -depsc;
 %                 elseif k == Nsim
 % %                     saveas(gcf,'scrn-QP-44.eps','eps2c');
-%                     export_fig scrn-QP-44.eps -depsc;
+%                     export_fig scrn-QPmvObsRad-44.eps -depsc;
 %                 end
                 
                 if k < Nsim
@@ -736,11 +769,13 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ip.addParamValue('Radius', 0);
             ip.addParamValue('Loops', 1);
             ip.addParamValue('Center', [0;0]);
+            ip.addParamValue('InitPoint', 0);
             ip.parse(varargin{:});
             Options = ip.Results;
             
             cen = repmat(Options.Center, 1, ceil(Nsim/Options.Loops)+1);
-            phi = linspace(-pi, pi, ceil(Nsim/Options.Loops)+1);
+            phi = linspace(-pi+Options.InitPoint, pi+Options.InitPoint,...
+                ceil(Nsim/Options.Loops)+1);
             T = Options.Radius*[cos(phi); sin(phi)] + cen;
             T = repmat(T, 1, Options.Loops);
             T = T(:, 1:Nsim+1);
