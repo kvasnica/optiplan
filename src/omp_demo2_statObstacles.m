@@ -18,8 +18,8 @@ agent = optiplan.LinearAgent.demo2D('PredictionHorizon', N, 'SamplingTime', Ts);
 agent.Size.Value = [1; 1]; % agents width (in the x-axis) and length
 
 % Decide between Mixed Integer and Constraint Change approach
-MixedInteger = true;
-% MixedInteger = false;
+% MixedInteger = true;
+MixedInteger = false;
 
 % for time-varying constraints, these must be sat as parameters
 if MixedInteger == false
@@ -46,7 +46,13 @@ obstacles(3).Position.Value = [0; -10];
 obstacles(4).Position.Value = [-10; 0];
 % the planner optimizes agent's motion
 minsep = agent.Size.Value; % minimal separation gap between the agent and the obstacles
-planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep, 'solver', 'gurobi');
+if MixedInteger == true
+    planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
+        'solver', 'gurobi');
+else
+    planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
+        'solver', 'gurobi', 'MixedInteger', false);
+end
 
 %% closed-loop simulation
 % create the simulator
@@ -59,22 +65,9 @@ yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
 psim.Parameters.Agent.Y.Reference = yref;
 
 %% run the simulation
-% calculation of constraints
-if MixedInteger == false
-    asize = agent.Size.Value;
-    con = [1.5*asize(1); 11*asize(2)];
-    psim.generateConstraints(yref, Nsim, con)
-end
-
-if MixedInteger == true
-    tic;
-    psim.run(x0, Nsim, 'MixedInteger', true)
-    timeMI = toc
-else
-    tic;
-    psim.run(x0, Nsim, 'MixedInteger', false)
-    timeCC = toc
-end
+tic;
+psim.run(x0, Nsim)
+time = toc
 
 %% Value of error
 J = 0;
@@ -88,10 +81,9 @@ J
 if MixedInteger == true
     psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
         'predictions', true, 'predsteps', 10, 'delay', 0.1,...
-        'textSize', 24,'textFont', 'CMU Serif', 'ABtrajectory', true);
+        'textSize', 24,'textFont', 'CMU Serif');
 else
-    psim.plot('MixedInteger', false, 'Constraints', true,...
-        'axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
+    psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
         'predictions', true, 'predsteps', 10, 'delay', 0.1,...
-        'textSize', 24, 'textFont', 'CMU Serif', 'ABtrajectory', true);
+        'textSize', 24, 'textFont', 'CMU Serif', 'Constraints', true);
 end

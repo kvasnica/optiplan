@@ -20,6 +20,7 @@ classdef Planner < optiplan.utils.OMPBaseClass
     end
     properties
         Parameters
+        MixedInteger % decide whether to use MIQP or time-varying constraints
     end
     
     methods
@@ -40,6 +41,7 @@ classdef Planner < optiplan.utils.OMPBaseClass
             ip.addParamValue('solver', 'gurobi', @ischar);
             ip.addParamValue('MinSeparation', zeros(agent.ny, 1));
             ip.addParamValue('BigBound', 1e4);
+            ip.addParamValue('MixedInteger', true);
             ip.parse(varargin{:});
             options = ip.Results;
 
@@ -59,6 +61,8 @@ classdef Planner < optiplan.utils.OMPBaseClass
             obj.MinSeparation = options.MinSeparation;
             % big-M bound
             obj.BigBound = options.BigBound;
+            % use of MIQP or Time-Varying Constraints
+            obj.MixedInteger = options.MixedInteger;
             
             % which variables are parametric?
             parameters = obj.getParameters();

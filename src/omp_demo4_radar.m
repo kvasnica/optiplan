@@ -1,4 +1,4 @@
-%% agent follows a circular trajectory and avoids moving obstacles
+%% agent follows a circular trajectory and avoids static obstacles detected by radar
 
 clear
 yalmip clear
@@ -7,8 +7,8 @@ clc
 % addpath(genpath('optiplan'))
 warning off
 
-% MIQP time: 29.23s J: 1336.4
-% QP   time: 4.98s  J: 1419.1 
+% MIQP  time: 27.86s  J: 1336.3
+% QP    time: 5.48s   J: 1419.5
 
 %% set up the playground
 N = 30;     % prediction horizon
@@ -31,8 +31,8 @@ agent.Y.Reference = 'parameter';
 % 4 obstacles
 obstacles = optiplan.Obstacle(agent, 4);
 for i = 1:length(obstacles)
-    if MixedInteger == true % if MIQP, all obstacles are visible to the agent
-        obstacles(i).Visible.Value = 1;
+    if MixedInteger == true % if MIQP, all obstacles are visible to the agent based on radar
+        obstacles(i).Visible.Value = 'parameter';
     else % if time-varying constraints, all obstacles are not visible to the agent
         obstacles(i).Visible.Value = 0;
     end
@@ -43,7 +43,13 @@ for i = 1:length(obstacles)
 end
 % the planner optimizes agent's motion
 minsep = agent.Size.Value; % minimal separation gap between the agent and the obstacles
-planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep, 'solver', 'gurobi');
+if MixedInteger == true
+    planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
+        'solver', 'gurobi');
+else
+    planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
+        'solver', 'gurobi', 'MixedInteger', false);
+end
 
 %% closed-loop simulation
 % create the simulator
@@ -53,6 +59,7 @@ x0 = [0; 0; 0; 0]; % initial point
 Nsim = 350; % number of simulation steps
 
 % obstacles follow a circular trajectory
+
 obstpos{1} = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 3,...
     'Center', [0;0], 'InitPoint', pi);
 obstpos{2} = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 1,...
@@ -61,8 +68,6 @@ obstpos{3} = psim.circularTrajectory(Nsim, 'Radius', 2, 'Loops', 5,...
     'Center', [0;10]);
 obstpos{4} = psim.circularTrajectory(Nsim, 'Radius', 3, 'Loops', 5,...
     'Center', [0;-10], 'InitPoint', pi/2);
-% obstpos{5} = psim.circularTrajectory(Nsim, 'Radius', 3, 'Loops', 5,...
-%     'Center', [10;0], 'InitPoint', -pi/2);
 
 for i = 1:length(obstacles)
     psim.Parameters.Obstacles(i).Position.Value = obstpos{i};
@@ -73,22 +78,24 @@ yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
 psim.Parameters.Agent.Y.Reference = yref;
 
 %% run the simulation
-% calculation of constraints
-if MixedInteger == false
-    asize = agent.Size.Value;
-    con = [1.5*asize(1); 11*asize(2)];
-    psim.generateConstraints(yref, Nsim, con)
+
+% -1 value indicates that visibility of the obstacle will be determined by
+% the radar
+% TODO: drop this requirement
+if MixedInteger == true
+    for i = 1:length(obstacles)
+        psim.Parameters.Obstacles(i).Visible.Value = -1;
+    end
 end
 
-if MixedInteger == true
-    tic;
-    psim.run(x0, Nsim, 'MixedInteger', true, 'MovingObs', true)
-    timeMI = toc
-else
-    tic;
-    psim.run(x0, Nsim, 'MixedInteger', false, 'MovingObs', true)
-    timeCC = toc
-end
+% radar detector: returns true if the obstacle is in the radar's range
+RadarRadius = 5;
+radar_detector = @(apos, opos, osize) psim.circularRadar(RadarRadius,...
+    apos, opos, osize);
+
+tic;
+psim.run(x0, Nsim, 'RadarDetector', radar_detector)
+time = toc
 
 %% Value of error
 J = 0;
@@ -100,13 +107,18 @@ J
 
 %% plot the results
 % pause(6)
+% radar plotter plots the radar range w.r.t. current position of the agent
+radar_plotter = @(apos) viscircles(apos', RadarRadius);
 if MixedInteger == true
-    psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
-        'predictions', true, 'predsteps', 10, 'delay', 0.1,...
-        'textSize', 24,'textFont', 'CMU Serif', 'ABtrajectory', true);
+    psim.plot('RadarDetector', radar_detector,...
+        'RadarPlotter', radar_plotter, 'axis', [-15 15 -15 15],...
+        'Reference', true, 'trail', true, 'predictions', true,...
+        'predsteps', 10, 'delay', 0.1, 'textSize', 24,...
+        'textFont', 'CMU Serif');
 else
-    psim.plot('MixedInteger', false, 'Constraints', true,...
-        'axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
-        'predictions', true, 'predsteps', 10, 'delay', 0.1,...
-        'textSize', 24, 'textFont', 'CMU Serif', 'ABtrajectory', true);
+    psim.plot('RadarDetector', radar_detector,...
+        'RadarPlotter', radar_plotter, 'axis', [-15 15 -15 15],...
+        'Reference', true, 'trail', true, 'predictions', true,...
+        'predsteps', 10, 'delay', 0.1, 'textSize', 24,...
+        'textFont', 'CMU Serif', 'Constraints', true);
 end

@@ -84,8 +84,7 @@ classdef LinearAgent < optiplan.Agent
             %
             % see "help optiplan.LinearAgent.demo2D
             
-            A = [1 0; Ts 1]; B = [Ts; 0]; C = [0 1];
-%             A = [1 0; Ts 1]; B = [Ts; Ts^2]; C = [0 1];
+            A = [1 0; Ts 1]; B = [Ts; 0.5*Ts^2]; C = [0 1];
             mpcoptions.A = [A, zeros(2); zeros(2) A];
             mpcoptions.B = [B zeros(2, 1); zeros(2, 1) B];
             mpcoptions.f = zeros(4, 1);

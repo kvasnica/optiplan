@@ -33,5 +33,4 @@ psim.Parameters.Agent.Y.Reference = yref;
 psim.run(x0, Nsim);
 % plot the results
 psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'predictions', true,...
-    'predsteps', 10, 'trail', true, 'textSize', 24, 'textFont', 'CMU Serif',...
-    'ABtrajectory', true);
+    'predsteps', 10, 'trail', true, 'textSize', 24, 'textFont', 'CMU Serif');

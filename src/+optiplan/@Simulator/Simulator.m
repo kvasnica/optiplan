@@ -36,7 +36,6 @@ classdef Simulator < optiplan.utils.OMPBaseClass
         end
         
         function generateConstraints(obj, yref, Nsim, con)
-%             con = [1.5*asize(1); 11*asize(2)];
             for k = 1:Nsim
                 if abs(yref(1,k) - yref(1,k+1)) <= abs(yref(2,k) - yref(2,k+1))
                     obj.Parameters.Agent.Y.Min(:,k) = [yref(1,k)-con(2);yref(2,k)-con(1)];
@@ -79,6 +78,12 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             %                     agent. see "omp_demo7.m" for a demo.
             %   'WaitBar' -- whether to display the progress bar 
             %                (true by default)
+            %   'ABtrajectory' -- true/false whether reference trajectory
+            %                     is closed or opened. needed to correct
+            %                     calculations of predictions.
+            %   'TVConsWidth' -- used for calculations of lower and upper
+            %                    bounds of width of permitted area when
+            %                    using time-varying constraints
             %
             % After the simulation is ran, the results are stored in the
             % psim.Results structure as follows:
@@ -110,9 +115,8 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ip.addParamValue('OutputEq', []);
             ip.addParamValue('RadarDetector', []);
             ip.addParamValue('WaitBar', true);
-            ip.addParamValue('MixedInteger', true);
             ip.addParamValue('ABtrajectory', false);
-            ip.addParamValue('MovingObs', false);
+            ip.addParamValue('TVConsWidth', 11)
             ip.parse(varargin{:});
             Options = ip.Results;
             
@@ -132,6 +136,13 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 end
                 obj.Parameters = obj.Planner.computeParameters(obj.Parameters, ...
                     obj.UserData.Xlin(:, 1), obj.UserData.Ulin(:, 1));
+            end
+            
+            % calculation of constraints
+            if obj.Planner.MixedInteger == false
+                asize = obj.Planner.Agent.Size.Value;
+                con = [1.5*asize(1); Options.TVConsWidth*asize(2)];
+                obj.generateConstraints(obj.Parameters.Agent.Y.Reference, Nsim, con)
             end
             
             % check for missing parameters
@@ -192,9 +203,9 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                     obj.Planner.Parameters.(pi.module)(pi.module_index).(pi.signal).(pi.property) = value;
                 end
                 
-                if Options.MixedInteger == false && isempty(Options.RadarDetector)
+                if obj.Planner.MixedInteger == false && isempty(Options.RadarDetector)
                     for i = 1:length(obj.Planner.Obstacles)
-                        timevarConstraints(obj,k,Options,N,i);
+                        timevarConstraints(obj,k,N,i);
                     end
                 end
                 
@@ -218,11 +229,11 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                             % TODO: need a better initialization
                             cansee = 0;
                         end
-                        if Options.MixedInteger == true
+                        if obj.Planner.MixedInteger == true
                             obj.Planner.Parameters.Obstacles(i).Visible.Value = repmat(cansee, 1, obj.Planner.Agent.N);
                         else
                             if cansee == 1
-                                timevarConstraints(obj,k,Options,N,i);
+                                timevarConstraints(obj,k,N,i);
                             end
                         end
                     end
@@ -246,16 +257,6 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 % linearization around a given trajectory
                 obj.Planner.computeParameters(Xlin, Ulin);
                 
-%                 if Options.ABtrajectory == true
-%                     if k > Nsim-N+1
-%                         Nsim-k+1
-%                         N-(Nsim-k)+1
-%                         obj.Planner.Parameters.Agent.Y.Reference(:,(Nsim-k+1):end)...
-%                             = repmat(obj.Parameters.Agent.Y.Reference(:,Nsim), 1, N-(Nsim-k));
-%                         obj.Planner.Parameters.Agent.Y.Reference
-%                     end
-%                 end
-
                 % optimize
                 [u, prob, openloop] = obj.Planner.optimize(x0);
                 if prob~=0
@@ -285,7 +286,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 obj.Results.X = [obj.Results.X, xn];
                 obj.Results.Y = [obj.Results.Y, y];
                 obj.Results.U = [obj.Results.U, u];
-                if Options.MixedInteger == false
+                if obj.Planner.MixedInteger == false
                     obj.Parameters.Agent.Y.Max(:,k) = obj.Planner.Parameters.Agent.Y.Max(:, 1);
                     obj.Parameters.Agent.Y.Min(:,k) = obj.Planner.Parameters.Agent.Y.Min(:, 1);
                     obj.Results.ConsPrediction(k).Y.Max = obj.Planner.Parameters.Agent.Y.Max;
@@ -309,15 +310,16 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 obj.Results.U = obj.Results.U(:, 1:Nsim - N);
                 obj.Parameters.Agent.Y.Max = obj.Parameters.Agent.Y.Max(:, 1:Nsim - N);
                 obj.Parameters.Agent.Y.Min = obj.Parameters.Agent.Y.Min(:, 1:Nsim - N);
-                obj.Results.ConsPrediction = obj.Results.ConsPrediction(:, 1:Nsim - N);
+                if obj.Planner.MixedInteger == false
+                    obj.Results.ConsPrediction = obj.Results.ConsPrediction(:, 1:Nsim - N);
+                end
                 obj.Results.Nsim = Nsim - N;
-%                 Nsim = obj.Results.Nsim;
             end
         end
         
-        function timevarConstraints(obj,k,Options,N,i)
+        function timevarConstraints(obj,k,N,i)
             if k>1
-                if Options.MovingObs == true
+                if ~isempty(obj.Planner.Parameters.Obstacles)
                     ob_max = [];
                     ob_min = [];
                     ob_max(:,1:N) = obj.Planner.Parameters.Obstacles(i).Position.Value + repmat(obj.Planner.Obstacles(i).Size.Value/2, 1, N);
@@ -330,7 +332,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 for kk = 1:N-1
                     if abs(obj.Planner.Parameters.Agent.Y.Reference(1,kk) - obj.Planner.Parameters.Agent.Y.Reference(1,kk+1))...
                     <= abs(obj.Planner.Parameters.Agent.Y.Reference(2,kk) - obj.Planner.Parameters.Agent.Y.Reference(2,kk+1))
-                        if Options.MovingObs == true
+                        if ~isempty(obj.Planner.Parameters.Obstacles)
                             if obj.Planner.Parameters.Agent.Y.Max(2,kk) > (ob_min(2,kk))...
                                     && obj.Planner.Parameters.Agent.Y.Min(2,kk) < (ob_max(2,kk));
                                 if obj.Planner.Parameters.Agent.Y.Max(1,kk) > ob_min(1,kk)...
@@ -356,7 +358,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                             end
                         end
                     else
-                        if Options.MovingObs == true
+                        if ~isempty(obj.Planner.Parameters.Obstacles)
                             if obj.Planner.Parameters.Agent.Y.Max(1,kk) > (ob_min(1,kk))...
                                     && obj.Planner.Parameters.Agent.Y.Min(1,kk) < (ob_max(1,kk));
                                 if obj.Planner.Parameters.Agent.Y.Max(2,kk) > ob_min(2,kk)...
@@ -418,6 +420,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ip.addParamValue('ReferenceColor', [0.32,0.46,0]);
             ip.addParamValue('ReferenceStyle', ':');
             ip.addParamValue('ReferenceWidth', 2);
+            ip.addParamValue('PrevReference', false);
             ip.addParamValue('Delay', 0.05);
             ip.addParamValue('Predictions', false);
             ip.addParamValue('PredSteps', obj.Planner.Agent.N);
@@ -430,10 +433,10 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ip.addParamValue('RadarPlotter', []);
             ip.addParamValue('Loops', 1);
             ip.addParamValue('ObsEdgeWidth', 2);
-            ip.addParamValue('ABtrajectory', false);
+            ip.addParamValue('endPredictions', true);
             ip.addParamValue('textSize', 12);
             ip.addParamValue('textFont', 'Helvetica');
-            ip.addParamValue('MixedInteger', true);
+            ip.addParamValue('SaveFigs', []);
             ip.parse(varargin{:});
             Options = ip.Results;
             
@@ -559,9 +562,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 end
                 
                 % plot constraints predictions
-                if Options.ConsPredictions% && ...
-%                         all(isfinite(params.Planner.Agent.Y.Min(:, k))) && ...
-%                         all(isfinite(params.Planner.Agent.Y.Max(:, k)))
+                if Options.ConsPredictions
                     pred_range = 2:obj.Planner.Agent.N;
                     pred_range = round(linspace(2, obj.Planner.Agent.N, Options.PredSteps));
                     for kk = pred_range
@@ -583,7 +584,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                         apos = obj.Results.Y(:, k);
                         opos = params.Obstacles(i).Position(:, k);
                         osize = params.Obstacles(i).Size(:, k);
-                        if Options.MixedInteger == false
+                        if obj.Planner.MixedInteger == false
                             cansee = obj.Planner.Obstacles(i).Visible.Value(1);
                         else
                             cansee = Options.RadarDetector(apos, opos, osize);
@@ -604,7 +605,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 % plot predictions if desired
                 if Options.Predictions
                     pred_range = 2:obj.Planner.Agent.N;
-                    if Options.ABtrajectory == true
+                    if Options.endPredictions == true
                         if k == Nsim
                             pred_range = linspace(1, 1, Options.PredSteps);
                         elseif k > Nsim - N
@@ -627,10 +628,12 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                             'LineWidth', Options.AgentPredLineWidth);
                         handles = [handles, h];
                         % plot the previewed references
-%                         h = plot(params.Agent.Y.Reference(1, k+i), ...
-%                             params.Agent.Y.Reference(2, k+i), ...
-%                             'color', Options.ReferenceColor, ...
-%                             'marker', 'o', 'markersize', 10);
+                        if Options.PrevReference == true
+                            h = plot(params.Agent.Y.Reference(1, k+i), ...
+                                params.Agent.Y.Reference(2, k+i), ...
+                                'color', Options.ReferenceColor, ...
+                                'marker', 'o', 'markersize', 10);
+                        end
                         handles = [handles, h];
                     end
                 end
@@ -661,19 +664,21 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 title(sprintf('Simulation step: %d/%d', k, Nsim));
                 pause(Options.Delay);
                 
-%                 if k == 50
-% %                     saveas(gcf,'scrn-QP-14.eps','eps2c');
-%                     export_fig scrn-QPmvObsRad-14.eps -depsc;
-%                 elseif k == 100
-% %                     saveas(gcf,'scrn-QP-24.eps','eps2c');
-%                     export_fig scrn-QPmvObsRad-24.eps -depsc;
-%                 elseif k == 150
-% %                     saveas(gcf,'scrn-QP-34.eps','eps2c');
-%                     export_fig scrn-QPmvObsRad-34.eps -depsc;
-%                 elseif k == Nsim
-% %                     saveas(gcf,'scrn-QP-44.eps','eps2c');
-%                     export_fig scrn-QPmvObsRad-44.eps -depsc;
-%                 end
+                if ~isempty(Options.SaveFigs)
+                    if k == Options.SaveFigs(1)
+        %                 saveas(gcf,'scrn-14.eps','eps2c');
+                        export_fig scrn-14.eps -depsc;
+                    elseif k == Options.SaveFigs(2)
+        %                 saveas(gcf,'scrn-24.eps','eps2c');
+                        export_fig scrn-24.eps -depsc;
+                    elseif k == Options.SaveFigs(3)
+        %                 saveas(gcf,'scrn-34.eps','eps2c');
+                        export_fig scrn-34.eps -depsc;
+                    elseif k == Nsim
+        %                 saveas(gcf,'scrn-44.eps','eps2c');
+                        export_fig scrn-44.eps -depsc;
+                    end
+                end
                 
                 if k < Nsim
                     delete(handles);
@@ -780,16 +785,6 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             T = repmat(T, 1, Options.Loops);
             T = T(:, 1:Nsim+1);
         end
-%         function T = pointwiseTrajectory(Nsim, waypoints)
-%             % Piecewise trajectory connecting given waypoints
-%             
-%             T = waypoints(:,1);
-%             npoints = size(waypoints, 2);
-%             for i = 2:npoints
-%                 T = [T, repmat(waypoints(:, i), 1, round(Nsim/(npoints-1)-1))];
-%             end
-% %             T = [T(:, 1:Nsim),waypoints(:,npoints)];
-%         end
         function T = pointwiseTrajectory(Nsim, waypoints)
             % Piecewise trajectory connecting given waypoints
             
@@ -846,18 +841,6 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             % consider number of Loops
             T = [T(:,1),repmat(T(:,2:end), 1, Options.Loops)];
         end
-%         function T = abTrajectory(Nsim, waypoints)
-%             % A -> B trajectory
-%             
-%             w = waypoints;
-%             % points of trajectory
-%             T = [];
-%             T(:,1) = [w(1,1);w(2,1)];
-%             for j = 1:Nsim-1
-%                 T(1,j+1) = w(1,1) + (j/(Nsim-1))*(w(1,2) - w(1,1));
-%                 T(2,j+1) = w(2,1) + (j/(Nsim-1))*(w(2,2) - w(2,1));
-%             end
-%         end
         function T = abTrajectory(Nsim, N, waypoints)
             % A -> B trajectory
             
