@@ -785,61 +785,59 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             T = repmat(T, 1, Options.Loops);
             T = T(:, 1:Nsim+1);
         end
-        function T = pointwiseTrajectory(Nsim, waypoints)
+        function T = pointwiseTrajectory(Nsim, waypoints, varargin)
             % Piecewise trajectory connecting given waypoints
             
-            T = [];
-            npoints = size(waypoints, 2);
-            for i = 1:npoints
-                T = [T, repmat(waypoints(:, i), 1, ceil(Nsim/npoints))];
-            end
-            T = [T(:, 1:Nsim),waypoints(:,npoints)];
-        end
-        function T = straightwayTrajectory(Nsim, waypoints, varargin)
-            % Piecewise trajectory connecting given waypoints
-
             ip = inputParser;
             ip.addParamValue('Loops', 1);
+            ip.addParamValue('Sampling', false);
             ip.parse(varargin{:});
             Options = ip.Results;
             
             T = [];
             % number of waypoints
             npoints = size(waypoints, 2);
-            % length of every part of trajectory
-            D = [];
-            
-            w = waypoints;
-            for i = 1:npoints - 1
-                D(1, i) = abs(sqrt((w(1, i) - w(1, i+1))^2 + (w(2, i) - w(2, i+1))^2));
+            if Options.Sampling == false
+                for i = 1:npoints
+                    T = [T, repmat(waypoints(:, i), 1, ceil(Nsim/npoints))];
+                end
+                T = [T(:, 1:Nsim),waypoints(:,npoints)];
+            else
+                % length of every part of trajectory
+                D = [];
+
+                w = waypoints;
+                for i = 1:npoints - 1
+                    D(1, i) = abs(sqrt((w(1, i) - w(1, i+1))^2 + (w(2, i) - w(2, i+1))^2));
+                end
+                D(1, npoints) = abs(sqrt((w(1, npoints) - w(1, 1))^2 + (w(2, npoints) - w(2, 1))^2));
+                Dsum = sum(D);
+                % points for every part except last one
+                B = cell(npoints,1);
+                for i = 1:npoints - 1
+                    B{i,1} = [];
+                    D(1,i) = round((D(1,i)/Dsum)*(Nsim/Options.Loops));
+                    B{i,1}(:,1) = [w(1,i);w(2,i)];
+                    for j = 1:D(1,i) - 1
+                        B{i,1}(1,j+1) = w(1,i) + (j/D(1,i))*(w(1,i+1) - w(1,i));
+                        B{i,1}(2,j+1) = w(2,i) + (j/D(1,i))*(w(2,i+1) - w(2,i));
+                    end                
+                end
+                % last part
+                B{npoints,1} = [];
+                D(1,npoints) = round((D(1,npoints)/Dsum)*(Nsim/Options.Loops));
+                B{npoints,1}(:,1) = [w(1,npoints);w(2,npoints)];
+                for j = 1:D(1,npoints)
+                    B{npoints,1}(1,j+1) = w(1,npoints) + (j/D(1,npoints))*(w(1,1) - w(1,npoints));
+                    B{npoints,1}(2,j+1) = w(2,npoints) + (j/D(1,npoints))*(w(2,1) - w(2,npoints));
+                end
+                % connect all parts to one trajectory
+                for i = 1:npoints
+                    T = [T,B{i,1}];
+                end
+                % consider number of Loops
+                T = [T(:,1),repmat(T(:,2:end), 1, Options.Loops)];
             end
-            D(1, npoints) = abs(sqrt((w(1, npoints) - w(1, 1))^2 + (w(2, npoints) - w(2, 1))^2));
-            Dsum = sum(D);
-            % points for every part except last one
-            B = cell(npoints,1);
-            for i = 1:npoints - 1
-                B{i,1} = [];
-                D(1,i) = round((D(1,i)/Dsum)*(Nsim/Options.Loops));
-                B{i,1}(:,1) = [w(1,i);w(2,i)];
-                for j = 1:D(1,i) - 1
-                    B{i,1}(1,j+1) = w(1,i) + (j/D(1,i))*(w(1,i+1) - w(1,i));
-                    B{i,1}(2,j+1) = w(2,i) + (j/D(1,i))*(w(2,i+1) - w(2,i));
-                end                
-            end
-            % last part
-            B{npoints,1} = [];
-            D(1,npoints) = round((D(1,npoints)/Dsum)*(Nsim/Options.Loops));
-            B{npoints,1}(:,1) = [w(1,npoints);w(2,npoints)];
-            for j = 1:D(1,npoints)
-                B{npoints,1}(1,j+1) = w(1,npoints) + (j/D(1,npoints))*(w(1,1) - w(1,npoints));
-                B{npoints,1}(2,j+1) = w(2,npoints) + (j/D(1,npoints))*(w(2,1) - w(2,npoints));
-            end
-            % connect all parts to one trajectory
-            for i = 1:npoints
-                T = [T,B{i,1}];
-            end
-            % consider number of Loops
-            T = [T(:,1),repmat(T(:,2:end), 1, Options.Loops)];
         end
         function T = abTrajectory(Nsim, N, waypoints)
             % A -> B trajectory
