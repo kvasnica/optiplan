@@ -4,11 +4,8 @@ clear
 yalmip clear
 close all
 clc
-% addpath(genpath('optiplan'))
+addpath(genpath('optiplan'))
 warning off
-
-% MIQP time: 29.23s J: 1336.4
-% QP   time: 4.98s  J: 1419.1 
 
 %% set up the playground
 N = 30;     % prediction horizon
@@ -43,14 +40,9 @@ for i = 1:length(obstacles)
 end
 % the planner optimizes agent's motion
 minsep = agent.Size.Value; % minimal separation gap between the agent and the obstacles
-if MixedInteger == true
-    planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
-        'solver', 'gurobi');
-else
-    planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
-        'solver', 'gurobi', 'MixedInteger', false);
-end
-
+planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
+        'solver', 'gurobi', 'MixedInteger', MixedInteger);
+    
 %% closed-loop simulation
 % create the simulator
 psim = optiplan.Simulator(planner);
@@ -79,22 +71,23 @@ psim.Parameters.Agent.Y.Reference = yref;
 %% run the simulation
 tic;
 psim.run(x0, Nsim)
-time = toc
+simtime = toc
 
 %% Value of error
-J = 0;
+trackQual = 0;
 for k = 1:Nsim
-    J = J + (psim.Results.Y(:,k) - yref(:,k))'*eye(ny)*(psim.Results.Y(:,k)...
+    trackQual = trackQual + (psim.Results.Y(:,k) - yref(:,k))'*eye(ny)*(psim.Results.Y(:,k)...
         - yref(:,k));
 end
-J
+trackQual
 
 %% plot the results
+% save figures: paramter - 'SaveFigs',[step1,step2,step3,step4]
 % pause(6)
 if MixedInteger == true
     psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
         'predictions', true, 'predsteps', 10, 'delay', 0.1,...
-        'textSize', 24,'textFont', 'CMU Serif');
+        'textSize', 24,'textFont', 'CMU Serif','SaveFigs',[138,168,220]);
 else
     psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
         'predictions', true, 'predsteps', 10, 'delay', 0.1,...

@@ -79,8 +79,9 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             %   'WaitBar' -- whether to display the progress bar 
             %                (true by default)
             %   'ABtrajectory' -- true/false whether reference trajectory
-            %                     is closed or opened. needed to correct
-            %                     calculations of predictions.
+            %                     is closed (false) or open (true). needed
+            %                     to correct calculations of predictions.
+            %                     default value is false
             %   'TVConsWidth' -- used for calculations of lower and upper
             %                    bounds of width of permitted area when
             %                    using time-varying constraints
@@ -139,7 +140,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             end
             
             % calculation of constraints
-            if obj.Planner.MixedInteger == false
+            if ~obj.Planner.MixedInteger
                 asize = obj.Planner.Agent.Size.Value;
                 con = [1.5*asize(1); Options.TVConsWidth*asize(2)];
                 obj.generateConstraints(obj.Parameters.Agent.Y.Reference, Nsim, con)
@@ -203,7 +204,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                     obj.Planner.Parameters.(pi.module)(pi.module_index).(pi.signal).(pi.property) = value;
                 end
                 
-                if obj.Planner.MixedInteger == false && isempty(Options.RadarDetector)
+                if ~obj.Planner.MixedInteger && isempty(Options.RadarDetector)
                     for i = 1:length(obj.Planner.Obstacles)
                         timevarConstraints(obj,k,N,i);
                     end
@@ -286,7 +287,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 obj.Results.X = [obj.Results.X, xn];
                 obj.Results.Y = [obj.Results.Y, y];
                 obj.Results.U = [obj.Results.U, u];
-                if obj.Planner.MixedInteger == false
+                if ~obj.Planner.MixedInteger
                     obj.Parameters.Agent.Y.Max(:,k) = obj.Planner.Parameters.Agent.Y.Max(:, 1);
                     obj.Parameters.Agent.Y.Min(:,k) = obj.Planner.Parameters.Agent.Y.Min(:, 1);
                     obj.Results.ConsPrediction(k).Y.Max = obj.Planner.Parameters.Agent.Y.Max;
@@ -310,7 +311,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 obj.Results.U = obj.Results.U(:, 1:Nsim - N);
                 obj.Parameters.Agent.Y.Max = obj.Parameters.Agent.Y.Max(:, 1:Nsim - N);
                 obj.Parameters.Agent.Y.Min = obj.Parameters.Agent.Y.Min(:, 1:Nsim - N);
-                if obj.Planner.MixedInteger == false
+                if ~obj.Planner.MixedInteger
                     obj.Results.ConsPrediction = obj.Results.ConsPrediction(:, 1:Nsim - N);
                 end
                 obj.Results.Nsim = Nsim - N;
@@ -584,7 +585,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                         apos = obj.Results.Y(:, k);
                         opos = params.Obstacles(i).Position(:, k);
                         osize = params.Obstacles(i).Size(:, k);
-                        if obj.Planner.MixedInteger == false
+                        if ~obj.Planner.MixedInteger
                             cansee = obj.Planner.Obstacles(i).Visible.Value(1);
                         else
                             cansee = Options.RadarDetector(apos, opos, osize);
@@ -674,7 +675,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                     elseif k == Options.SaveFigs(3)
         %                 saveas(gcf,'scrn-34.eps','eps2c');
                         export_fig scrn-34.eps -depsc;
-                    elseif k == Nsim
+                    elseif k == Options.SaveFigs(4)
         %                 saveas(gcf,'scrn-44.eps','eps2c');
                         export_fig scrn-44.eps -depsc;
                     end

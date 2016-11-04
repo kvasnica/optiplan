@@ -4,11 +4,8 @@ clear
 yalmip clear
 close all
 clc
-% addpath(genpath('optiplan'))
+addpath(genpath('optiplan'))
 warning off
-
-% MIQP  time: 27.86s  J: 1336.3
-% QP    time: 5.48s   J: 1419.5
 
 %% set up the playground
 N = 30;     % prediction horizon
@@ -43,13 +40,8 @@ for i = 1:length(obstacles)
 end
 % the planner optimizes agent's motion
 minsep = agent.Size.Value; % minimal separation gap between the agent and the obstacles
-if MixedInteger == true
-    planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
-        'solver', 'gurobi');
-else
-    planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
-        'solver', 'gurobi', 'MixedInteger', false);
-end
+planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
+    'solver', 'gurobi', 'MixedInteger', MixedInteger);
 
 %% closed-loop simulation
 % create the simulator
@@ -77,7 +69,7 @@ end
 yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
 psim.Parameters.Agent.Y.Reference = yref;
 
-%% run the simulation
+%% set the radar
 
 % -1 value indicates that visibility of the obstacle will be determined by
 % the radar
@@ -93,19 +85,21 @@ RadarRadius = 5;
 radar_detector = @(apos, opos, osize) psim.circularRadar(RadarRadius,...
     apos, opos, osize);
 
+%% run the simulation
 tic;
 psim.run(x0, Nsim, 'RadarDetector', radar_detector)
-time = toc
+simtime = toc
 
 %% Value of error
-J = 0;
+trackQual = 0;
 for k = 1:Nsim
-    J = J + (psim.Results.Y(:,k) - yref(:,k))'*eye(ny)*(psim.Results.Y(:,k)...
+    trackQual = trackQual + (psim.Results.Y(:,k) - yref(:,k))'*eye(ny)*(psim.Results.Y(:,k)...
         - yref(:,k));
 end
-J
+trackQual
 
 %% plot the results
+% save figures: paramter - 'SaveFigs',[step1,step2,step3,step4]
 % pause(6)
 % radar plotter plots the radar range w.r.t. current position of the agent
 radar_plotter = @(apos) viscircles(apos', RadarRadius);
@@ -114,11 +108,11 @@ if MixedInteger == true
         'RadarPlotter', radar_plotter, 'axis', [-15 15 -15 15],...
         'Reference', true, 'trail', true, 'predictions', true,...
         'predsteps', 10, 'delay', 0.1, 'textSize', 24,...
-        'textFont', 'CMU Serif');
+        'textFont', 'CMU Serif','SaveFigs',[138,168,220]);
 else
     psim.plot('RadarDetector', radar_detector,...
         'RadarPlotter', radar_plotter, 'axis', [-15 15 -15 15],...
         'Reference', true, 'trail', true, 'predictions', true,...
         'predsteps', 10, 'delay', 0.1, 'textSize', 24,...
-        'textFont', 'CMU Serif', 'Constraints', true);
+        'textFont', 'CMU Serif', 'Constraints', true,'SaveFigs',[138,168,220]);
 end
