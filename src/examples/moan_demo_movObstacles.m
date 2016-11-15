@@ -1,4 +1,4 @@
-%% agent follows a circular trajectory and avoids static obstacles
+%% agent follows a circular trajectory and avoids moving obstacles
 
 clear
 yalmip clear
@@ -26,23 +26,35 @@ for i = 1:length(obstacles)
     obstacles(i).Visible.Value = 1;
     % all have fixed size
     obstacles(i).Size.Value = [3; 2];
+    % all have floating position
+    obstacles(i).Position.Value = 'parameter';
 end
-% positions of respective obstacles:
-obstacles(1).Position.Value = [0; 10];
-obstacles(2).Position.Value = [10; 0];
-obstacles(3).Position.Value = [0; -10];
-obstacles(4).Position.Value = [-10; 0];
 % the planner optimizes agent's motion
 minsep = agent.Size.Value; % minimal separation gap between the agent and the obstacles
 planner = moantool.Planner(agent, obstacles, 'MinSeparation', minsep,...
-    'solver', 'gurobi', 'MixedInteger', MixedInteger);
-
+        'solver', 'gurobi', 'MixedInteger', MixedInteger);
+    
 %% closed-loop simulation
 % create the simulator
 psim = moantool.Simulator(planner);
 % simulation parameters
 x0 = [0; 0; 0; 0]; % initial point
 Nsim = 350; % number of simulation steps
+
+% obstacles follow a circular trajectory
+obstpos{1} = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 3,...
+    'Center', [0;0], 'InitPoint', pi);
+obstpos{2} = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 1,...
+    'Center', [0;0], 'InitPoint', pi/2);
+obstpos{3} = psim.circularTrajectory(Nsim, 'Radius', 2, 'Loops', 5,...
+    'Center', [0;10]);
+obstpos{4} = psim.circularTrajectory(Nsim, 'Radius', 3, 'Loops', 5,...
+    'Center', [0;-10], 'InitPoint', pi/2);
+
+for i = 1:length(obstacles)
+    psim.Parameters.Obstacles(i).Position.Value = obstpos{i};
+end
+
 % use a circular reference
 yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
 psim.Parameters.Agent.Y.Reference = yref;
@@ -52,17 +64,9 @@ tic;
 psim.run(x0, Nsim)
 simtime = toc
 
-%% Value of error
-trackQual = 0;
-for k = 1:Nsim
-    trackQual = trackQual + (psim.Results.Y(:,k) - yref(:,k))'*eye(ny)...
-        *(psim.Results.Y(:,k) - yref(:,k));
-end
-trackQual
-
 %% plot the results
 % save figures: paramter - 'SaveFigs',[step1,step2,step3,step4]
-% pause(10)
+pause(10)
 if MixedInteger == true
     psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
         'predictions', true, 'predsteps', 10, 'delay', 0.1,...

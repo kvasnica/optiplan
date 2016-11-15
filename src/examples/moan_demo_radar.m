@@ -1,4 +1,4 @@
-%% agent follows a circular trajectory and avoids moving obstacles
+%% agent follows a circular trajectory and avoids static obstacles detected by radar
 
 clear
 yalmip clear
@@ -23,7 +23,8 @@ agent.Y.Reference = 'parameter';
 % 4 obstacles
 obstacles = moantool.Obstacle(agent, 4);
 for i = 1:length(obstacles)
-    obstacles(i).Visible.Value = 1;
+    % if MIQP, all obstacles are visible to the agent based on radar
+    obstacles(i).Visible.Value = 'parameter';
     % all have fixed size
     obstacles(i).Size.Value = [3; 2];
     % all have floating position
@@ -32,8 +33,8 @@ end
 % the planner optimizes agent's motion
 minsep = agent.Size.Value; % minimal separation gap between the agent and the obstacles
 planner = moantool.Planner(agent, obstacles, 'MinSeparation', minsep,...
-        'solver', 'gurobi', 'MixedInteger', MixedInteger);
-    
+    'solver', 'gurobi', 'MixedInteger', MixedInteger);
+
 %% closed-loop simulation
 % create the simulator
 psim = moantool.Simulator(planner);
@@ -59,28 +60,32 @@ end
 yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
 psim.Parameters.Agent.Y.Reference = yref;
 
+%% set the radar
+% radar detector: returns true if the obstacle is in the radar's range
+RadarRadius = 5;
+radar_detector = @(apos, opos, osize) psim.circularRadar(RadarRadius,...
+    apos, opos, osize);
+
 %% run the simulation
 tic;
-psim.run(x0, Nsim)
+psim.run(x0, Nsim, 'RadarDetector', radar_detector)
 simtime = toc
-
-%% Value of error
-trackQual = 0;
-for k = 1:Nsim
-    trackQual = trackQual + (psim.Results.Y(:,k) - yref(:,k))'*eye(ny)...
-        *(psim.Results.Y(:,k) - yref(:,k));
-end
-trackQual
 
 %% plot the results
 % save figures: paramter - 'SaveFigs',[step1,step2,step3,step4]
 pause(10)
+% radar plotter plots the radar range w.r.t. current position of the agent
+radar_plotter = @(apos) viscircles(apos', RadarRadius);
 if MixedInteger == true
-    psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
-        'predictions', true, 'predsteps', 10, 'delay', 0.1,...
-        'textSize', 24,'textFont', 'CMU Serif');
+    psim.plot('RadarDetector', radar_detector,...
+        'RadarPlotter', radar_plotter, 'axis', [-15 15 -15 15],...
+        'Reference', true, 'trail', true, 'predictions', true,...
+        'predsteps', 10, 'delay', 0.1, 'textSize', 24,...
+        'textFont', 'CMU Serif');
 else
-    psim.plot('axis', [-15 15 -15 15], 'Reference', true, 'trail', true,...
-        'predictions', true, 'predsteps', 10, 'delay', 0.1,...
-        'textSize', 24, 'textFont', 'CMU Serif', 'Constraints', true);
+    psim.plot('RadarDetector', radar_detector,...
+        'RadarPlotter', radar_plotter, 'axis', [-15 15 -15 15],...
+        'Reference', true, 'trail', true, 'predictions', true,...
+        'predsteps', 10, 'delay', 0.1, 'textSize', 24,...
+        'textFont', 'CMU Serif', 'Constraints', true);
 end

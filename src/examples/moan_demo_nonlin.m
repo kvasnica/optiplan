@@ -1,26 +1,26 @@
 % Trajectory following with a nonlinear dynamics
-
-% Point mass with acceleration circle constraint
-% model per pages 33 and 34 of
-% http://web.mit.edu/mobility/publications/Peters_PhD_Thesis.pdf
 %
 % Nonlinear dynamics:
-%   \ddot{X} = u1*sin(u2)
-%   \ddot{Y} = u1*cos(u2)
+%   \ddot{X} = (r/2)*cos(Theta)*(u(1)+u(2))
+%   \ddot{Y} = (r/2)*sin(Theta)*(u(1)+u(2))
+%   \ddot{Theta} = (r/L)*(u(2)-u(1))
 %
 % State vector:
-%       [  X ] x-position   
-%       [  Y ] y-position
-%   z = [ vx ] x-speed
-%       [ vy ] y-speed
+%       [  X  ]   x-position   
+%   z = [  Y  ]   y-position
+%   	[ Theta ] difference between angular speeds of wheels
 %
 % Input vector:
-%       [ u1 ] acceleration
-%   u = [ u2 ] angle
+%       [ u1 ] angular speed of left wheel
+%   u = [ u2 ] angular speed of right wheel
+%
+% Constants
+%   r   radius of wheels
+%   L   distance between wheels
 %
 % Overall dynamics:
-%   \dot{z} = f(z, u) = [ \dot{X}, \dot{Y}, u1*sin(u2), u1*cos(u2) ]^T
-%                     = [ z(3), z(4), u(1)*sin(u(2)), u(1)*cos(u(2)) ]'
+%   \dot{z} = f(z, u) = [ \dot{X}, \dot{Y}, \dot{Theta} ]^T
+%                     = [ (r/2)*cos(Theta)*(u(1)+u(2)), (r/2)*sin(Theta)*(u(1)+u(2)), (r/L)*(u(2)-u(1)) ]'
 
 clear
 yalmip clear
@@ -119,13 +119,6 @@ x0 = [0; 0; 0];
 tic;
 psim.run(x0, Nsim)
 time = toc
-
-%% Value of error
-trackQual = 0;
-for k = 1:Nsim
-    trackQual = trackQual + (psim.Results.Y(:,k) - yref(:,k))'*eye(ny)*(psim.Results.Y(:,k) - yref(:,k));
-end
-trackQual
 
 %% plot the results
 % save figures: paramter - 'SaveFigs',[step1,step2,step3,step4]

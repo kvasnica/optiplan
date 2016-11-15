@@ -511,8 +511,8 @@ classdef Simulator < moantool.utils.OMPBaseClass
             % main figure
             scenefig = figure('Color','white');
             % set the figure fullscreen
-            set(scenefig,'Units','normalized','Position', [0 0 1 1])
-            pause(2);
+%             set(scenefig,'Units','normalized','Position', [0 0 1 1])
+%             pause(2);
             axis equal
             hold on;box on
             axis(Options.Axis);
