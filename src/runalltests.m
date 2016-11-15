@@ -10,13 +10,13 @@ moantool.tests.t_NonlinearAgent();
 moantool.tests.t_Obstacle();
 moantool.tests.t_Simulator();
 
-mnt_demo1
-mnt_demo2
-mnt_demo3
-mnt_demo4
-mnt_demo5
-mnt_demo6
-mnt_demo7
-mnt_demo8
-mnt_demo9
-mnt_demo9lin
+moan_demo1
+moan_demo2
+moan_demo3
+moan_demo4
+moan_demo5
+moan_demo6
+moan_demo7
+moan_demo8
+moan_demo9
+moan_demo9lin
