@@ -1,4 +1,5 @@
 %% agent follows a circular trajectory and avoids static obstacles
+% MIQP approach
 
 clear
 yalmip clear
@@ -15,8 +16,7 @@ agent = moantool.LinearAgent.demo2D('PredictionHorizon', N, 'SamplingTime', Ts);
 agent.Size.Value = [1; 1]; % agents width (in the x-axis) and length
 
 % Decide between Mixed Integer and Constraint Change approach
-% MixedInteger = true;
-MixedInteger = false;
+MixedInteger = true;
 
 % position reference will be time-varying
 agent.Y.Reference = 'parameter';
@@ -53,12 +53,7 @@ psim.run(x0, Nsim)
 simtime = toc
 
 %% plot the results
-if MixedInteger == true
-    psim.plot('Axis', [-15 15 -15 15], 'Reference', true, 'Trail', true,...
-        'Predictions', true, 'PredSteps', 10, 'Delay', 0.1,...
-        'textSize', 24,'textFont', 'CMU Serif');
-else
-    psim.plot('Axis', [-15 15 -15 15], 'Reference', true, 'Trail', true,...
-        'Predictions', true, 'PredSteps', 10, 'Delay', 0.1,...
-        'textSize', 24, 'textFont', 'CMU Serif', 'Constraints', true);
-end
+psim.plot('Axis', [-15 15 -15 15], 'Reference', true, 'Trail', true,...
+    'Predictions', true, 'PredSteps', 10, 'Delay', 0.1,...
+    'textSize', 24,'textFont', 'CMU Serif');
+

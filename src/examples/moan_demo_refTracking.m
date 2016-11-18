@@ -10,11 +10,11 @@ warning off
 %% set up the playground
 N = 30;     % prediction horizon
 Ts = 0.25;  % sampling time
-nx = 4; nu = 2; ny = 2;
 agent = moantool.LinearAgent.demo2D('PredictionHorizon', N, 'SamplingTime', Ts);
-agent.Size.Value = [1; 1]; % agents width (in the x-axis) and length
 % position reference will be time-varying
 agent.Y.Reference = 'parameter';
+% agents width (in the x-axis) and length (in the y-axis)
+agent.Size.Value = [1; 1];
 % no obstacles
 obstacles = [];
 % the planner optimizes agent's motion

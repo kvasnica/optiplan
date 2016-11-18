@@ -1,4 +1,4 @@
-function [P, results] = omp_demo8
+function [P, results] = moan_demo8
 % Trajectory planning with obstacle avoidance and nonlinear constraints
 
 % Notes:
