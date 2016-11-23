@@ -1,4 +1,4 @@
-# MOANTOOL
+# MOANTOOL (MPC with Obstacle Avoidance Toolbox)
 
 ## About
 
