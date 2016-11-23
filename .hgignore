@@ -2,3 +2,4 @@ syntax: glob
 docs/.ipynb_checkpoints
 *.zip
 *.*~
+*.*.orig
