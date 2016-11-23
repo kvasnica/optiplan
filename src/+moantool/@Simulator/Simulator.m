@@ -269,7 +269,7 @@ classdef Simulator < moantool.utils.OMPBaseClass
                 % optimize
                 [u, prob, openloop] = obj.Planner.optimize(x0);
 %                 if prob~=0
-                if ~ismember(prob, [0, 1, 3, 4, 5])
+                if ~ismember(prob, [0, 3, 4, 5])
                     error('Problem at step %d: %s', k, yalmiperror(prob));
                 end
                 % state update
