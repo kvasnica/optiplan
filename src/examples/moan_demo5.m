@@ -34,7 +34,7 @@ planner = moantool.Planner(agent, obstacles, 'MinSeparation', minsep, 'solver', 
 psim = moantool.Simulator(planner);
 % simulation parameters
 x0 = [0; 0; 0; 0]; % initial point
-Nsim = 300; % number of simulation steps
+Nsim = 250; % number of simulation steps
 % use a circular reference
 yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
 psim.Parameters.Agent.Y.Reference = yref;

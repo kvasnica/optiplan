@@ -72,8 +72,6 @@ psim.run(x0, Nsim, 'RadarDetector', radar_detector)
 simtime = toc
 
 %% plot the results
-% save figures: paramter - 'SaveFigs',[step1,step2,step3,step4]
-pause(10)
 % radar plotter plots the radar range w.r.t. current position of the agent
 radar_plotter = @(apos) viscircles(apos', RadarRadius);
 if MixedInteger == true
