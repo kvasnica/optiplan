@@ -7,7 +7,7 @@ function tbxmake
 config.package = 'moantool';
 
 % version to make
-config.version = '1.0';
+config.version = '1.0.1';
 
 % package repository
 config.repository = 'stable';
