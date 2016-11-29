@@ -7,6 +7,7 @@ function tbxmake
 config.package = 'moantool';
 
 % version to make
+error('Make sure to bump the version number.');
 config.version = '1.0.1';
 
 % package repository
