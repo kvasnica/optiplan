@@ -447,6 +447,8 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             ip.addParamValue('textSize', 12);
             ip.addParamValue('textFont', 'Helvetica');
             ip.addParamValue('SaveFigs', []);
+            ip.addParamValue('SaveVideo', []);
+            ip.addParamValue('VidFrameRate', 14);
             ip.parse(varargin{:});
             Options = ip.Results;
             
@@ -512,6 +514,13 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             scenefig = figure('Color','white');
             % set the figure fullscreen
 %             set(scenefig,'Units','normalized','Position', [0 0 1 1])
+
+            % Prepare video file
+            if ~isempty(Options.SaveVideo)
+              vidObj = VideoWriter(Options.SaveVideo);
+              vidObj.FrameRate = Options.VidFrameRate;
+              open(vidObj);
+            end
             
             axis equal
             hold on;box on
@@ -691,6 +700,12 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                     end
                 end
                 
+                % Write each frame to the file.
+                if Options.SaveVideo
+                  currFrame = getframe;
+                  writeVideo(vidObj,currFrame);
+                end
+                
                 if k < Nsim
                     delete(handles);
                 end
@@ -698,6 +713,10 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             end
             end
             hold off
+            % Close the video file.
+            if Options.SaveVideo
+              close(vidObj);
+            end
         end
         
         function [params, missing, missing_names] = readParameters(obj, Nsim)
