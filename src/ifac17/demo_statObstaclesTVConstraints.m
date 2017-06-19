@@ -5,14 +5,14 @@ clear
 yalmip clear
 close all
 clc
-addpath(genpath('moantool'))
+addpath(genpath('optiplan'))
 warning off
 
 %% set up the playground
 N = 30;     % prediction horizon
 Ts = 0.25;  % sampling time
 nx = 4; nu = 2; ny = 2;
-agent = moantool.LinearAgent.demo2D('PredictionHorizon', N, 'SamplingTime', Ts);
+agent = optiplan.LinearAgent.demo2D('PredictionHorizon', N, 'SamplingTime', Ts);
 agent.Size.Value = [1; 1]; % agents width (in the x-axis) and length
 
 % Decide between Mixed Integer and Constraint Change approach
@@ -21,7 +21,7 @@ MixedInteger = false;
 % position reference will be time-varying
 agent.Y.Reference = 'parameter';
 % 4 obstacles
-obstacles = moantool.Obstacle(agent, 4);
+obstacles = optiplan.Obstacle(agent, 4);
 for i = 1:length(obstacles)
     obstacles(i).Visible.Value = 1;
     % all have fixed size
@@ -34,12 +34,12 @@ obstacles(3).Position.Value = [0; -10];
 obstacles(4).Position.Value = [-10; 0];
 % the planner optimizes agent's motion
 minsep = agent.Size.Value; % minimal separation gap between the agent and the obstacles
-planner = moantool.Planner(agent, obstacles, 'MinSeparation', minsep,...
+planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep,...
     'solver', 'gurobi', 'MixedInteger', MixedInteger);
 
 %% closed-loop simulation
 % create the simulator
-psim = moantool.Simulator(planner);
+psim = optiplan.Simulator(planner);
 % simulation parameters
 x0 = [0; 0; 0; 0]; % initial point
 Nsim = 350; % number of simulation steps
