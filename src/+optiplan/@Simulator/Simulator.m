@@ -512,7 +512,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
             scenefig = figure('Color','white');
             % set the figure fullscreen
 %             set(scenefig,'Units','normalized','Position', [0 0 1 1])
-%             pause(2);
+            
             axis equal
             hold on;box on
             axis(Options.Axis);
@@ -595,11 +595,6 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                         apos = obj.Results.Y(:, k);
                         opos = params.Obstacles(i).Position(:, k);
                         osize = params.Obstacles(i).Size(:, k);
-%                         if ~obj.Planner.MixedInteger
-%                             cansee = obj.Planner.Obstacles(i).Visible.Value(1);
-%                         else
-%                             cansee = Options.RadarDetector(apos, opos, osize);
-%                         end
                         cansee = Options.RadarDetector(apos, opos, osize);
                     elseif ~isfield(params.Obstacles(i), 'Visible')
                         if ~obj.Planner.MixedInteger
@@ -699,6 +694,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 if k < Nsim
                     delete(handles);
                 end
+                               
             end
             end
             hold off
@@ -783,8 +779,6 @@ classdef Simulator < optiplan.utils.OMPBaseClass
     methods(Static)
         function T = circularTrajectory(Nsim, varargin)
             % Circular trajectory of a given radius and frequency
-            %
-            %    traj = circularTrajectory(Nsim, 'Radius', r, 'Loops', 1)
             
             ip = inputParser;
             ip.addParamValue('Radius', 0);
@@ -841,7 +835,7 @@ classdef Simulator < optiplan.utils.OMPBaseClass
                 end
                 % last part
                 B{npoints,1} = [];
-                D(1,npoints) = round((D(1,npoints)/Dsum)*(Nsim/Options.Loops));
+                D(1,npoints) = round(Nsim/Options.Loops) - sum(D(1,1:end-1));
                 B{npoints,1}(:,1) = [w(1,npoints);w(2,npoints)];
                 for j = 1:D(1,npoints)
                     B{npoints,1}(1,j+1) = w(1,npoints) + (j/D(1,npoints))*(w(1,1) - w(1,npoints));
@@ -857,19 +851,48 @@ classdef Simulator < optiplan.utils.OMPBaseClass
         end
         function T = abTrajectory(Nsim, N, waypoints)
             % A -> B trajectory
-            
-            % number of waypoints
+
+            % length of every part of trajectory
+            D = [];
             npoints = Nsim + N;
-            % length of trajectory
+
             w = waypoints;
-            Z = [w(1,2)+(w(1,2)-w(1,1))*(N/Nsim);
-                w(2,2)+(w(2,2)-w(2,1))*(N/Nsim)];
-            % points points of trajectory
+            nvertex = size(waypoints, 2);
+            for i = 1:nvertex - 1
+                D(1, i) = abs(sqrt((w(1, i) - w(1, i+1))^2 + (w(2, i) - w(2, i+1))^2));
+            end
+            Dsum = sum(D);
+            for i = 1:nvertex - 1
+                Dp(1, i) = D(1, i)/Dsum;
+            end
+            % points for every part except last one
+            B = cell(nvertex-1,1);
+            if nvertex > 2
+              for i = 1:nvertex - 2
+                  B{i,1} = [];
+                  D(1,i) = round((D(1,i)/Dsum)*Nsim);
+                  B{i,1}(:,1) = [w(1,i);w(2,i)];
+                  for j = 1:D(1,i) - 1
+                      B{i,1}(1,j+1) = w(1,i) + (j/D(1,i))*(w(1,i+1) - w(1,i));
+                      B{i,1}(2,j+1) = w(2,i) + (j/D(1,i))*(w(2,i+1) - w(2,i));
+                  end                
+              end
+              D_end = npoints - sum(Dp(1, end-1)) + 1;
+            else
+              D_end = npoints + 1;
+            end
+            % last part
+            B{nvertex-1,1} = [];
+            D(1,nvertex-1) = round((D(1,nvertex-1)/Dsum)*Nsim);
+            B{nvertex-1,1}(:,1) = [w(1,nvertex-1);w(2,nvertex-1)];
+            for j = 1:D_end
+                B{nvertex-1,1}(1,j+1) = w(1,nvertex-1) + (j/D(1,nvertex-1))*(w(1,nvertex) - w(1,nvertex-1));
+                B{nvertex-1,1}(2,j+1) = w(2,nvertex-1) + (j/D(1,nvertex-1))*(w(2,nvertex) - w(2,nvertex-1));
+            end
+            % connect all parts to one trajectory
             T = [];
-            T(:,1) = [w(1,1);w(2,1)];
-            for j = 1:npoints
-                T(1,j+1) = w(1,1) + (j/npoints)*(Z(1) - w(1,1));
-                T(2,j+1) = w(2,1) + (j/npoints)*(Z(2) - w(2,1));
+            for i = 1:nvertex-1
+                T = [T,B{i,1}];
             end
         end
         function cansee = circularRadar(RadarRadius, apos, opos, osize)

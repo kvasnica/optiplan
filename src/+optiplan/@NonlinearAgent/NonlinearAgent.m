@@ -76,6 +76,7 @@ classdef NonlinearAgent < optiplan.Agent
                 % requires symbolic toolbox
                 x = sym('x', [obj.nx 1]);
                 u = sym('u', [obj.nu 1]);
+                
                 fx = matlabFunction(jacobian(obj.StateEq(x, u), x), 'Vars', {x, u});
                 fu = matlabFunction(jacobian(obj.StateEq(x, u), u), 'Vars', {x, u});
                 gx = matlabFunction(jacobian(obj.OutputEq(x, u), x), 'Vars', {x, u});

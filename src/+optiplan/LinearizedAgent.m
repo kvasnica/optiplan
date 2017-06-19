@@ -1,3 +1,5 @@
+
+
 classdef LinearizedAgent < optiplan.LinearAgent & optiplan.NonlinearAgent
     % Class representing agents with linearized dynamics
 
