@@ -1,4 +1,4 @@
-# OPTIPLAN (MPC Toolbox for Trajectory Planning and Following with Obstacle Avoidance)
+# OPTIPLAN (MPC with Obstacle Avoidance Toolbox)
 
 ## About
 
@@ -6,7 +6,7 @@ OPTIPLAN is a Matlab-based toolbox for formulating, solving, and simulating mode
 
 ## Literature
 
-Janeček, F., Klaučo, M., Kalúz, M., Kvasnica, M.: [OPTIPLAN: A Matlab Toolbox for Model Predictive Control with Obstacle Avoidance](http://www.kirp.chtf.stuba.sk/~kvasnica/ifac_2017_optiplan.pdf). Submitted to the IFAC World Congress 2017 (under review)
+Janeček, F., Klaučo, M., Kalúz, M., Kvasnica, M.: [OPTIPLAN: A Matlab Toolbox for Model Predictive Control with Obstacle Avoidance](http://www.kirp.chtf.stuba.sk/~janecek/ifac_2017_optiplan.pdf). Submitted to the IFAC World Congress 2017 (under review)
 
 ## Installation, demos, further reading
 
