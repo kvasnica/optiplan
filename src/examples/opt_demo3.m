@@ -29,7 +29,7 @@ obstacle_size = {};
 obstacle_position{end+1} = [4; -4];
 obstacle_size{end+1} = [4; 2];
 % second obstacle
-obstacle_position{end+1} = [0; -6];
+obstacle_position{end+1} = [-1; -7];
 obstacle_size{end+1} = [2; 8];
 % the third is a tricky one! it blocks the shortest path to the origin
 obstacle_position{end+1} = [-2; -0.6];

@@ -19,7 +19,7 @@ for i = 1:length(obstacles)
     % radar data)
     obstacles(i).Visible.Value = 'parameter';
     % all have fixed size
-    obstacles(i).Size.Value = [2*i; i];
+    obstacles(i).Size.Value = [1; 1];
 end
 % positions of respective obstacles:
 obstacles(1).Position.Value = [0; 10];
@@ -35,9 +35,9 @@ planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep, 'solver', 
 psim = optiplan.Simulator(planner);
 % simulation parameters
 x0 = [0; 0; 0; 0]; % initial point
-Nsim = 200; % number of simulation steps
+Nsim = 125; % number of simulation steps
 % use a circular reference
-yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
+yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 1);
 psim.Parameters.Agent.Y.Reference = yref;
 % -1 value indicates that visibility of the obstacle will be determined by
 % the radar
@@ -47,10 +47,11 @@ for i = 1:length(obstacles)
 end
 
 % radar detector: returns true if the obstacle is in the radar's range
-RadarRadius = 5;
+RadarRadius = 7;
 radar_detector = @(apos, opos, osize) psim.circularRadar(RadarRadius, apos, opos, osize);
 % run the simulation
 psim.run(x0, Nsim, 'RadarDetector', radar_detector);
+%% plot the results
 % radar plotter plots the radar range w.r.t. current position of the agent
 radar_plotter = @(apos) viscircles(apos', RadarRadius);
 % plot the results

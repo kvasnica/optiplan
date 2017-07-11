@@ -18,7 +18,7 @@ for i = 1:length(obstacles)
     % all obstacles are visible to the agent
     obstacles(i).Visible.Value = 1;
     % all have fixed size
-    obstacles(i).Size.Value = [2*i; i];
+    obstacles(i).Size.Value = [1; 1];
 end
 % positions of respective obstacles:
 obstacles(1).Position.Value = [0; 10];
@@ -34,9 +34,9 @@ planner = optiplan.Planner(agent, obstacles, 'MinSeparation', minsep, 'solver', 
 psim = optiplan.Simulator(planner);
 % simulation parameters
 x0 = [0; 0; 0; 0]; % initial point
-Nsim = 250; % number of simulation steps
+Nsim = 125; % number of simulation steps
 % use a circular reference
-yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 2);
+yref = psim.circularTrajectory(Nsim, 'Radius', 10, 'Loops', 1);
 psim.Parameters.Agent.Y.Reference = yref;
 % run the simulation
 psim.run(x0, Nsim);
